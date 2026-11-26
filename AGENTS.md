@@ -1,6 +1,6 @@
-# TODO(template): Game name
+# Game Off 2026
 
-TODO(template): one sentence on what the game is, its engine (Godot 4, GDScript) and where art sources live.
+A Game Off 2026 jam entry (theme: SHIFT) in Godot 4 and GDScript: holding Shift makes the player bigger, heavier and slower. It is a grey-box with no art sources yet.
 
 ## Before editing
 

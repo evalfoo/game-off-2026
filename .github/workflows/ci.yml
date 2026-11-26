@@ -40,7 +40,6 @@ jobs:
 
   headless-tests:
     name: Headless checks
-    # TODO(template): a self-hosted runner, such as [self-hosted, <label>], saves Actions minutes.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -86,7 +85,7 @@ jobs:
           XDG_DATA_HOME: ${{ github.workspace }}/tests/output/userdata
         run: |
           status=0
-          build/linux/Game.x86_64 --headless --quit-after 300 > tests/output/export_run.log 2>&1 || status=$?
+          build/linux/GameOff2026.x86_64 --headless --quit-after 300 > tests/output/export_run.log 2>&1 || status=$?
           cat tests/output/export_run.log
           if grep -qE 'SCRIPT ERROR|Failed loading resource' tests/output/export_run.log; then
             echo "::error::The Linux build logged a script or resource error"

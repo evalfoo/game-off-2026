@@ -31,18 +31,17 @@ depends = ["import"]
 env = { XDG_DATA_HOME = "{{ config_root }}/tests/output/userdata" }
 run = "tests/run.sh native"
 
-# TODO(template): rename Game in the export paths here, in export_presets.cfg and in .github/workflows/ci.yml.
 [tasks."export:windows"]
 description = "Export a single-file Windows build to build/windows/ (needs export templates)"
 depends = ["import"]
-run = "mkdir -p build/windows && godot --headless --path . --export-release 'Windows Desktop' build/windows/Game.exe"
+run = "mkdir -p build/windows && godot --headless --path . --export-release 'Windows Desktop' build/windows/GameOff2026.exe"
 
 [tasks."export:linux"]
 description = "Export a single-file Linux build to build/linux/ (needs export templates)"
 depends = ["import"]
-run = "mkdir -p build/linux && godot --headless --path . --export-release 'Linux' build/linux/Game.x86_64"
+run = "mkdir -p build/linux && godot --headless --path . --export-release 'Linux' build/linux/GameOff2026.x86_64"
 
 [tasks."export:macos"]
 description = "Export an ad-hoc-signed universal macOS app to build/macos/ (needs export templates)"
 depends = ["import"]
-run = "mkdir -p build/macos && godot --headless --path . --export-release 'macOS' build/macos/Game.app"
+run = "mkdir -p build/macos && godot --headless --path . --export-release 'macOS' build/macos/GameOff2026.app"
