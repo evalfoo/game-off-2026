@@ -48,6 +48,14 @@ func _process(_delta: float) -> void:
 	_refresh_readout()
 
 
+# The play driver stops time with Engine.time_scale = 0, but physics still
+# steps with a zero delta, which turns moving rigid bodies that touch something
+# into NaN. Skip those steps. Physics steps after this callback, so it applies
+# in the same frame. evalfoo/godot-template#44 tracks a fix in the driver.
+func _physics_process(delta: float) -> void:
+	PhysicsServer2D.set_active(delta > 0.0)
+
+
 func _refresh_readout() -> void:
 	var size := player.shape.size
 	readout.text = "Arrows: move   Space: jump   Shift: hold\nsize: %d x %d\nmass: %.1f\nspeed: %d" % [
