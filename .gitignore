@@ -1,0 +1,18 @@
+# Godot
+.godot/
+/android/
+
+# Machine-specific settings, such as DISPLAY.
+mise.local.toml
+
+# Python bytecode from tools/ scripts.
+__pycache__/
+
+# Exported builds.
+/build/
+
+# Test saves, logs, screenshots and clips.
+/tests/output/*
+!/tests/output/.gdignore
+
+.DS_Store

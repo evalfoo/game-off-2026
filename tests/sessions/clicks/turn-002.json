@@ -1,0 +1,47 @@
+{
+  "label": "Clicks: 1",
+  "turn": 2,
+  "seed": 0,
+  "last_action": {
+    "ok": true,
+    "clicked": [
+      720,
+      452
+    ],
+    "node": "Main/Box/Button"
+  },
+  "ui": [
+    {
+      "node": "Main/Box/Label",
+      "class": "Label",
+      "text": "Clicks: 1",
+      "rect": [
+        620,
+        410,
+        200,
+        23
+      ],
+      "disabled": false
+    },
+    {
+      "node": "Main/Box/Button",
+      "class": "Button",
+      "text": "Click me",
+      "rect": [
+        620,
+        437,
+        200,
+        31
+      ],
+      "disabled": false,
+      "tooltip": "Counts your clicks"
+    }
+  ],
+  "events": [
+    {
+      "event": "pressed",
+      "time": 0.05,
+      "node": "Button"
+    }
+  ]
+}

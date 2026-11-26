@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch *)",
+      "Bash(git switch *)",
+      "Bash(godot --path . *)",
+      "Bash(godot --headless *)",
+      "Bash(mise exec -- godot --headless *)",
+      "Bash(mise exec -- tools/native.sh godot --path . *)",
+      "Bash(mise exec -- tests/run.sh *)",
+      "Bash(mise run import)",
+      "Bash(mise run test)",
+      "Bash(mise run test:native)",
+      "Bash(mise run play)",
+      "Bash(tools/clips/record.sh *)",
+      "Bash(tools/clips/stills.sh *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { [ -d .godot ] || .agents/worktree-setup \"$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\")\" >&2; }",
+            "timeout": 300,
+            "statusMessage": "Preparing the worktree: importing Godot assets"
+          }
+        ]
+      }
+    ]
+  }
+}

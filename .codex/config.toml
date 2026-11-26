@@ -1,0 +1,17 @@
+# Repo-local permissions for Linux development.
+approval_policy = "on-request"
+default_permissions = "project"
+
+[permissions.project]
+extends = ":workspace"
+
+[permissions.project.filesystem]
+# TODO(template): match config/custom_user_dir_name in project.godot.
+"~/.local/share/Game" = "write"
+"~/.cache/godot" = "write"
+# The editor import saves editor settings and data here.
+"~/.config/godot" = "write"
+"~/.local/share/godot" = "write"
+
+[permissions.project.network]
+enabled = true

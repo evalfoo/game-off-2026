@@ -1,0 +1,89 @@
+{
+  "label": "Clicks: 0",
+  "actions": [
+    {
+      "name": "click",
+      "fields": [
+        "x",
+        "y",
+        "node",
+        "button"
+      ],
+      "description": "A click at x, y, or at the middle of a control named by \"node\", a path from \"ui\". The pointer moves there first and stays, as a player's would. \"button\" is left (the default), right or middle."
+    },
+    {
+      "name": "drag",
+      "fields": [
+        "x",
+        "y",
+        "node",
+        "to_x",
+        "to_y"
+      ],
+      "description": "Presses the left button at x, y, or at the middle of \"node\", moves the pointer to to_x, to_y over a few frames and releases it there. Time stays still during the drag."
+    },
+    {
+      "name": "hover",
+      "fields": [
+        "x",
+        "y",
+        "node"
+      ],
+      "description": "Rests the pointer at x, y, or at the middle of a control named by \"node\", until a tooltip opens; last_action.tooltip holds its lines, and the next image shows it."
+    },
+    {
+      "name": "key",
+      "fields": [
+        "key"
+      ],
+      "description": "Presses and releases a key, named as Godot names it, such as Space, Escape, A or F1."
+    },
+    {
+      "name": "hold",
+      "fields": [
+        "keys",
+        "seconds"
+      ],
+      "description": "Holds keys down, such as [\"W\", \"D\"], while game time runs for \"seconds\" (at most 10), then releases them. Its wait runs after the release."
+    },
+    {
+      "name": "wait",
+      "fields": [],
+      "description": "Only lets time run: its wait, or 1 second without one."
+    }
+  ],
+  "screen_fields": [
+    "label"
+  ],
+  "turn": 1,
+  "seed": 0,
+  "last_action": {},
+  "ui": [
+    {
+      "node": "Main/Box/Label",
+      "class": "Label",
+      "text": "Clicks: 0",
+      "rect": [
+        620,
+        410,
+        200,
+        23
+      ],
+      "disabled": false
+    },
+    {
+      "node": "Main/Box/Button",
+      "class": "Button",
+      "text": "Click me",
+      "rect": [
+        620,
+        437,
+        200,
+        31
+      ],
+      "disabled": false,
+      "tooltip": "Counts your clicks"
+    }
+  ],
+  "events": []
+}

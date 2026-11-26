@@ -1,0 +1,98 @@
+name: CI
+
+# Changes only to .claude/ skip CI. Main is not tested on push: squash merges
+# were already tested on the PR. Run it by hand from the Actions tab when main
+# needs a check.
+on:
+  pull_request:
+    paths-ignore:
+      - ".claude/**"
+  workflow_dispatch:
+
+# A new push to a PR cancels its run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Native checks need a window. The runner has no GPU, so under Xvfb Godot
+  # falls back from Vulkan to the Compatibility renderer on software OpenGL
+  # (llvmpipe): this covers input, focus and UI logic, not how Forward+ looks.
+  native-tests:
+    name: Native checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v4
+      - name: Install Xvfb and Mesa
+        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri
+      - run: mise run test:native
+      - name: Keep the logs and turns
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-output
+          path: tests/output/
+          if-no-files-found: ignore
+
+  headless-tests:
+    name: Headless checks
+    # TODO(template): a self-hosted runner, such as [self-hosted, <label>], saves Actions minutes.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v4
+      - run: mise run test
+
+      # The export can leave out a resource that loads fine in the editor, so
+      # export Linux and start it. These template steps match release.yml,
+      # which shares the cache key, so keep the unzipped files the same.
+      - name: Find the Godot version
+        id: godot
+        run: echo "version=$(mise current godot | tr - .)" >> "$GITHUB_OUTPUT"
+      - name: Restore export templates
+        id: templates
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ steps.godot.outputs.version }}
+          key: godot-templates-${{ steps.godot.outputs.version }}-with-macos
+      - name: Install export templates
+        if: steps.templates.outputs.cache-hit != 'true'
+        run: |
+          tag=$(mise current godot)
+          mkdir -p ~/.local/share/godot/export_templates/${{ steps.godot.outputs.version }}
+          curl -sSfL -o "$RUNNER_TEMP/templates.tpz" \
+            "https://github.com/godotengine/godot/releases/download/$tag/Godot_v${tag}_export_templates.tpz"
+          unzip -o -j "$RUNNER_TEMP/templates.tpz" \
+            templates/version.txt templates/windows_release_x86_64.exe templates/linux_release.x86_64 \
+            templates/macos.zip \
+            -d ~/.local/share/godot/export_templates/${{ steps.godot.outputs.version }}
+      - name: Save export templates
+        if: steps.templates.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ steps.godot.outputs.version }}
+          key: godot-templates-${{ steps.godot.outputs.version }}-with-macos
+      - run: mise run export:linux
+      # Godot often exits 0 after a script error, so the log is checked too.
+      - name: Start the Linux build
+        env:
+          XDG_DATA_HOME: ${{ github.workspace }}/tests/output/userdata
+        run: |
+          status=0
+          build/linux/Game.x86_64 --headless --quit-after 300 > tests/output/export_run.log 2>&1 || status=$?
+          cat tests/output/export_run.log
+          if grep -qE 'SCRIPT ERROR|Failed loading resource' tests/output/export_run.log; then
+            echo "::error::The Linux build logged a script or resource error"
+            exit 1
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::The Linux build exited with $status"
+            exit 1
+          fi

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Prepares a fresh worktree. Orchestration skills and the Claude Code
+# session-start hook run it from the worktree root, with the main checkout's
+# path as the only argument.
+#
+#   .agents/worktree-setup <main-checkout>
+set -euo pipefail
+
+[ $# -eq 1 ] || { sed -n '6p' "$0" | sed 's/^# *//'; exit 2; }
+main=$1
+
+# Git-ignored machine settings, such as DISPLAY for native Godot.
+[ ! -f "$main/mise.local.toml" ] || [ "$main" -ef . ] || cp "$main/mise.local.toml" .
+# Trusts mise.toml and installs Godot.
+tools/setup.sh
+# Starts from the main checkout's import cache, so the import redoes only what
+# differs here.
+tools/seed_import.sh "$main" .
+# Without an import, scripts fail with errors such as Could not find base class.
+mise run import

@@ -1,0 +1,46 @@
+# Commands that cannot work inside the sandbox. "allow" runs them outside the
+# sandbox without asking. .claude/settings.json allows the same commands for
+# Claude Code; README.md's Agent permissions section lists both.
+
+# The sandbox keeps .git read-only, including the shared .git of /tmp worktrees.
+# Pushing still asks.
+prefix_rule(
+    pattern = ["git", ["add", "commit", "fetch", "switch"]],
+    justification = "Git writes to the read-only .git folder",
+    match = ["git add game/main.gd", "git commit -m fix", "git fetch origin"],
+    not_match = ["git push origin main", "git reset --hard"],
+)
+
+# Native Godot needs the GPU, which the sandbox hides. Headless runs
+# (`godot --headless ...`) work in the sandbox and don't match.
+prefix_rule(
+    pattern = ["godot", "--path", "."],
+    justification = "Native Godot needs the GPU",
+    match = ["godot --path . --script tests/clicks_native.gd"],
+    not_match = ["godot --headless --path . --script tests/clicks.gd"],
+)
+# Native checks and tools run on their own Xvfb display (tools/native.sh).
+prefix_rule(
+    pattern = ["mise", "exec", "--", "tools/native.sh", "godot", "--path", "."],
+    justification = "Native Godot needs the GPU",
+    match = ["mise exec -- tools/native.sh godot --path . --script tools/ui_shots.gd"],
+    not_match = ["mise exec -- tools/native.sh godot --headless --path . --script tests/clicks.gd"],
+)
+prefix_rule(
+    pattern = ["mise", "exec", "--", "tests/run.sh"],
+    justification = "Native checks need the GPU",
+    match = ["mise exec -- tests/run.sh tests/clicks_native.gd"],
+)
+prefix_rule(
+    pattern = ["mise", "run", ["test:native", "play"]],
+    justification = "Native Godot needs the GPU",
+)
+
+# The clip and still recorders add a git worktree and run native Godot on its
+# own Xvfb display.
+prefix_rule(
+    pattern = [["tools/clips/record.sh", "tools/clips/stills.sh"]],
+    justification = "Clip recorders write to .git and need the GPU",
+    match = ["tools/clips/record.sh tools/clips/scenarios/clicks.gd", "tools/clips/stills.sh HEAD"],
+    not_match = ["mise exec -- tools/clips/record.sh tools/clips/scenarios/clicks.gd", "./tools/clips/record.sh x.gd"],
+)
