@@ -2,6 +2,7 @@
 
 | Doc | What it is |
 |---|---|
+| [Design](design.md) | What the game is and the puzzles it's built from. |
 | [Implementation notes](implementation.md) | Engine decisions, code map, save and asset conventions. |
 | [Coding standards](../CODING_STANDARDS.md) | Review rules for recurring classes of bugs. |
 
