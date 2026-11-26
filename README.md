@@ -1,12 +1,6 @@
-# Godot game template
+# Game Off 2026
 
-A starting point for a Godot 4 game built with AI agents. It holds tooling from an earlier game, not game code: an `AGENTS.md`, headless and native test runners, before/after stills and clips for PRs, CI and weekly releases to itch.io. The game is a placeholder button that counts clicks, so every tool has something to run against. The [docs index](docs/README.md) lists the docs.
-
-## Start a new game
-
-1. Create the repository from this template, then run `tools/init.sh "<Game Name>" [<bundle id>]`. It renames the game, its export files, user folder and bundle identifier, and the `AGENTS.md` title, then lists the `TODO(template)` hits that are left. Resolve the CI runner one now. The others are the game's one-line summary in `AGENTS.md`, game code and engine notes that change as the game takes shape in step 2.
-2. Replace the placeholder game: `game/main.tscn`, `tests/clicks*.gd`, `tools/clips/scenarios/clicks.gd`, the click-counter parts of `game/play_hooks.gd` and `tests/play_hooks.gd`, and the recorded session in `tests/sessions/clicks/`.
-3. Delete this section and rename the title.
+A [Game Off 2026](https://itch.io/jam/game-off-2026) jam entry (theme: SHIFT), in Godot 4. Holding Shift makes the player bigger, heavier and slower. It started as a grey-box prototype and is still one. The tooling below came with the project template. The [docs index](docs/README.md) lists the docs.
 
 ## Setup
 
@@ -149,14 +143,14 @@ A shot script extends `tools/clips/scenario.gd` and calls `shot(<name>)`. It run
 `tools/clips/record.sh` records a scripted scenario on two git refs and writes before/after clips for a PR:
 
 ```sh
-tools/clips/record.sh tools/clips/scenarios/clicks.gd                  # origin/main and HEAD
-tools/clips/record.sh tools/clips/scenarios/clicks.gd a37bc38~1 a37bc38
-tools/clips/record.sh tools/clips/scenarios/clicks.gd HEAD             # one ref, no side by side
+tools/clips/record.sh tools/clips/scenarios/grow.gd                  # origin/main and HEAD
+tools/clips/record.sh tools/clips/scenarios/grow.gd a37bc38~1 a37bc38
+tools/clips/record.sh tools/clips/scenarios/grow.gd HEAD             # one ref, no side by side
 ```
 
 Each ref is checked out into a throwaway worktree under `/tmp`, imported from a copy of the main checkout's import cache as in `stills.sh`, and recorded with Godot Movie Maker at 30 fps and 1440×900, then removed. Commit game changes first: they're recorded from the commit, while the scenario and `tools/clips/scenario.gd` come from your working tree. The same commit gives the same frames every run. Linux only; it also needs an `ffmpeg` with the `drawtext` filter and a font, and checks for each tool before it starts.
 
-Each run creates a new folder under `tests/output/clips/` with `before.mp4`, `after.mp4`, `before-after.mp4`, `after.gif`, an 8-frame strip per ref, and a `README.md` with the refs, fixture, timeline and commands. To write a scenario, copy `tools/clips/scenarios/clicks.gd`; its header explains the helpers.
+Each run creates a new folder under `tests/output/clips/` with `before.mp4`, `after.mp4`, `before-after.mp4`, `after.gif`, an 8-frame strip per ref, and a `README.md` with the refs, fixture, timeline and commands. To write a scenario, copy `tools/clips/scenarios/grow.gd`; its header explains the helpers.
 
 To attach clips to a PR, run from the clip folder. `--attach` needs gh 2.99.0 or newer; older versions reject it.
 

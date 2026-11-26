@@ -1,0 +1,51 @@
+{
+  "readout": "Arrows: move   Space: jump   Shift: hold\nsize: 32 x 48\nmass: 1.0\nspeed: 300",
+  "turn": 3,
+  "seed": 0,
+  "last_action": {
+    "ok": true,
+    "held": [
+      "Left"
+    ],
+    "seconds": 1.0
+  },
+  "ui": [
+    {
+      "node": "Main/BoxA/@Label@10",
+      "class": "Label",
+      "text": "BOX A\nmass 2",
+      "rect": [
+        726,
+        740,
+        54,
+        49
+      ],
+      "disabled": false
+    },
+    {
+      "node": "Main/BoxB/@Label@13",
+      "class": "Label",
+      "text": "BOX B\nmass 8",
+      "rect": [
+        1010,
+        708,
+        54,
+        49
+      ],
+      "disabled": false
+    },
+    {
+      "node": "Main/Readout",
+      "class": "Label",
+      "text": "Arrows: move   Space: jump   Shift: hold\nsize: 32 x 48\nmass: 1.0\nspeed: 300",
+      "rect": [
+        16,
+        16,
+        304,
+        101
+      ],
+      "disabled": false
+    }
+  ],
+  "events": []
+}

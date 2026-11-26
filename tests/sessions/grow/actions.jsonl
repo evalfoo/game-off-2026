@@ -1,0 +1,4 @@
+{"action":{"do":"hold","keys":["Shift","Right"],"seconds":1.5,"why":"grow while walking right, short of BOX A"},"result":{"held":["Shift","Right"],"ok":true,"seconds":1.5},"seed":0,"turn":1}
+{"action":{"do":"hold","keys":["Left"],"seconds":1.0,"wait":0.5,"why":"let go of Shift: shrink and walk back left"},"result":{"held":["Left"],"ok":true,"seconds":1.0},"seed":0,"turn":2}
+{"action":{"do":"key","key":"Space","wait":0.3,"why":"jump while small"},"result":{"ok":true,"pressed":"Space"},"seed":0,"turn":3}
+{"action":{"do":"wait","wait":1.0},"result":{"ok":true},"seed":0,"turn":4}

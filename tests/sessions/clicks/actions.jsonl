@@ -1,4 +1,0 @@
-{"action":{"do":"click","node":"Main/Box/Button","wait":0.3,"why":"count one click"},"result":{"clicked":[720,452],"node":"Main/Box/Button","ok":true},"seed":0,"turn":1}
-{"action":{"do":"key","key":"Space","wait":0.2,"why":"the focused button takes Space"},"result":{"ok":true,"pressed":"Space"},"seed":0,"turn":2}
-{"action":{"do":"wait","wait":0.5},"result":{"ok":true},"seed":0,"turn":3}
-{"action":{"do":"click","why":"beside the button counts nothing","x":10.0,"y":10.0},"result":{"clicked":[10,10],"ok":true},"seed":0,"turn":4}
