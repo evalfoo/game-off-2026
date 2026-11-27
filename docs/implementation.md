@@ -15,7 +15,7 @@ The game uses custom physics: the player, boxes and seesaw plank are moved by co
 Keep the game's simulation apart from presentation, so headless tests can drive the rules without a window.
 
 - `game/main.gd`: builds the level (floor, walls, `BOX A`, `BOX B`), the player and the readout in code.
-- `game/player.gd`: the player, a `CharacterBody2D`. Holding Shift eases size, mass, speed and jump speed from the small values to the big ones; its origin sits at the feet, so it grows upward. It pushes boxes up to `push_ratio` times its mass, moving the box before itself in the same step, and weighs down the plank it stands on.
+- `game/player.gd`: the player, a `CharacterBody2D`. Holding Shift eases size, mass, speed and jump speed from the small values to the big ones; its origin sits at the feet, so it grows upward. It pushes boxes up to `push_ratio` times its mass, moving the box before itself in the same step, and weighs down the plank it stands on. Its controls have separate start and stop times, stronger gravity when falling or when jump is let go early, coyote time and a jump buffer.
 - `game/box.gd`: a box, a `CharacterBody2D` that falls and moves only when pushed.
 - `game/seesaw_plank.gd`: a seesaw plank, an `AnimatableBody2D` that turns toward the side with the larger mass × distance from the pivot, counting its fixed counterweight and what stands on it.
 - `game/play_hooks.gd`: the readout text for the play driver.
