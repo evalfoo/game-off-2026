@@ -90,6 +90,8 @@ func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
 	var bottom: Variant = camera.get("window_bottom")
 	check(bottom != null and lowest <= float(bottom) + 0.5,
 		"%s: falling, the feet drop no lower than the window's bottom edge, %s px below the view's centre" % [label, bottom])
+	check(bottom != null and absf(lowest - float(bottom)) < 0.05,
+		"%s: the deepest feet sit on the fall line, %s px below the view's centre: %.3f" % [label, bottom, lowest])
 	await physics(120)
 	var feet_below: float = camera.feet_below_centre
 	check(absf(_centre().y - (floor_y - feet_below)) < 0.5,
