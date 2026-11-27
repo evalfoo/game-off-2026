@@ -14,13 +14,14 @@ const PlayerCamera := preload("res://game/camera.gd")
 func run() -> void:
 	game.free()
 	game = (load("res://game/rooms/seesaw.tscn") as PackedScene).instantiate()
+	root.add_child(game)
+	# After the room, whose _ready() adds the player.
 	var camera := PlayerCamera.new()
 	camera.target = game.player
 	camera.limit_left = 0
 	camera.limit_right = 320
 	camera.limit_bottom = 180
 	game.add_child(camera)
-	root.add_child(game)
 	fixture("the seesaw room with a camera added, its top limit open")
 	await hold(1.0)
 	start_clip()
