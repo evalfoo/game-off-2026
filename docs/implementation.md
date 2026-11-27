@@ -8,15 +8,18 @@ Godot 4.7.2 stable (pinned in `mise.toml`), GDScript, Forward+ renderer. The mai
 
 The game uses custom physics: the player, boxes and seesaw plank are moved by code, and their rules (who can push what, which way the plank turns) are code too. There are no `RigidBody2D`s; real physics made those rules depend on tuning forces and gave the player no inertia against them.
 
+The player's collision shape is a rectangle. A capsule would round off catches on corners and tile joins, but walking across the tile floor's joins doesn't catch at either size, so the rectangle stays for now.
+
 `project.godot` reports the GDScript warnings `untyped_declaration`, `unsafe_property_access`, `unsafe_method_access` and `unsafe_call_argument` at the Warn level. Move one to Error once nothing triggers it.
 
 ## Code map
 
 Keep the game's simulation apart from presentation, so headless tests can drive the rules without a window.
 
-- `game/main.gd`: builds the level (floor, walls, `BOX A`, `BOX B`), the player and the readout in code.
+- `game/main.gd`: builds the level (tiles, `BOX A`, `BOX B`), the player and the readout in code.
+- `game/tiles.gd`: builds a room's floor and side walls as a `TileMapLayer` from `art/tiles.tres`.
 - `game/player.gd`: the player, a `CharacterBody2D`. Holding Shift eases size, mass, speed and jump speed from the small values to the big ones; its origin sits at the feet, so it grows upward. It pushes boxes up to `push_ratio` times its mass, moving the box before itself in the same step, and weighs down the plank it stands on. Its controls have separate start and stop times, stronger gravity when falling or when jump is let go early, coyote time and a jump buffer.
-- `game/box.gd`: a box, a `CharacterBody2D` that falls and moves only when pushed.
+- `game/box.gd`: a box, a `CharacterBody2D` that falls and moves only when pushed. It puts its x back after its own `move_and_slide()`: on the tile floor, sliding pressed against the other box crept both about 1 px/s.
 - `game/seesaw_plank.gd`: a seesaw plank, an `AnimatableBody2D` that turns toward the side with the larger mass × distance from the pivot, counting its fixed counterweight and what stands on it.
 - `game/play_hooks.gd`: the readout text for the play driver.
 - `game/rooms/seesaw.tscn`: a grey-box room for the seesaw puzzle, separate from the main scene. Open it with `mise exec -- godot --path . res://game/rooms/seesaw.tscn`, or the game MCP server's `scene`.
@@ -29,7 +32,9 @@ Every save goes under `save_directory` in `game/main.gd`, `user://` by default. 
 
 ## Assets and coordinates
 
-TODO(template): units, axes, origin and naming conventions for imported assets.
+- The view is 320×180 game pixels, drawn at the largest whole multiple that fits the window (`stretch/mode="viewport"`, `scale_mode="integer"`), with nearest filtering and transforms snapped to whole pixels. The window opens at 1280×720.
+- Positions and sizes are in game pixels; tiles are 16 px. Moving to this scale divided the earlier lengths, speeds and gravity by 3, so jumps keep their shape.
+- Art lives in `art/`: PNGs with their `.import` files, and the tile set `art/tiles.tres`, whose one tile has a full-square collision polygon. The PNGs there are flat placeholders. The player's sprite is drawn at the small size and stretched as it grows; box collision takes its size from the box's sprite.
 
 ## Testing
 

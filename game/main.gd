@@ -5,10 +5,14 @@ extends Node2D
 # scene through tests/lib/fixture.gd.
 
 const Player := preload("res://game/player.gd")
+const Tiles := preload("res://game/tiles.gd")
 const Box := preload("res://game/box.gd")
 
-# The floor's top edge. The player starts standing on it.
-const FLOOR_Y := 840.0
+# The floor's top edge, at tile row 10 of the 320x180 view. The player starts
+# standing on it.
+const FLOOR_Y := 160.0
+# Labels at the 320x180 view's scale.
+const FONT_SIZE := 8
 
 # The folder every save goes under. tests/lib/fixture.gd sets it before
 # _ready() for tests, clips, stills and agent play sessions, so they never touch
@@ -24,23 +28,19 @@ var readout := Label.new()
 
 
 func _ready() -> void:
-	# Wider than the 1440 px view, so a wider window still shows floor.
-	_add_static("Floor", Vector2(720, FLOOR_Y + 30), Vector2(2880, 60))
-	_add_static("WallLeft", Vector2(-10, 450), Vector2(20, 900))
-	# At the visible edge: the stretch mode widens the 1440 px view on wider
-	# windows, such as 1600 px at 16:9.
-	_add_static("WallRight", Vector2(get_viewport_rect().size.x + 10, 450), Vector2(20, 900))
+	add_child(Tiles.room(FLOOR_Y))
 
-	_add_box("BoxA", "BOX A", Vector2(750, FLOOR_Y - 24), Vector2(48, 48), 2.0)
-	_add_box("BoxB", "BOX B", Vector2(1050, FLOOR_Y - 40), Vector2(80, 80), 8.0)
+	_add_box("BoxA", "BOX A", Vector2(168, FLOOR_Y - 8), preload("res://art/box_a.png"), 2.0)
+	_add_box("BoxB", "BOX B", Vector2(240, FLOOR_Y - 16), preload("res://art/box_b.png"), 8.0)
 
 	player = Player.new()
 	player.name = "Player"
-	player.position = Vector2(250, FLOOR_Y)
+	player.position = Vector2(56, FLOOR_Y)
 	add_child(player)
 
 	readout.name = "Readout"
-	readout.position = Vector2(16, 16)
+	readout.position = Vector2(4, 2)
+	readout.add_theme_font_size_override("font_size", FONT_SIZE)
 	add_child(readout)
 	_refresh_readout()
 
@@ -55,25 +55,21 @@ func _refresh_readout() -> void:
 		size.x, size.y, player.mass, player.speed]
 
 
-func _add_static(node_name: String, pos: Vector2, size: Vector2) -> void:
-	var body := StaticBody2D.new()
-	body.name = node_name
-	body.position = pos
-	body.add_child(_rect_shape(size))
-	body.add_child(_rect_visual(size, Color(0.4, 0.4, 0.4)))
-	add_child(body)
-
-
-func _add_box(node_name: String, label_text: String, pos: Vector2, size: Vector2, box_mass: float) -> void:
+# A box the size of its sprite.
+func _add_box(node_name: String, label_text: String, pos: Vector2, texture: Texture2D, box_mass: float) -> void:
+	var size := texture.get_size()
 	var body := Box.new()
 	body.name = node_name
 	body.position = pos
 	body.mass = box_mass
 	body.add_child(_rect_shape(size))
-	body.add_child(_rect_visual(size, Color(0.6, 0.6, 0.6)))
+	var sprite := Sprite2D.new()
+	sprite.texture = texture
+	body.add_child(sprite)
 	var label := Label.new()
 	label.text = "%s\nmass %d" % [label_text, box_mass]
-	label.position = Vector2(-size.x / 2, -size.y / 2 - 52)
+	label.add_theme_font_size_override("font_size", FONT_SIZE)
+	label.position = Vector2(-size.x / 2, -size.y / 2 - 28)
 	body.add_child(label)
 	add_child(body)
 
@@ -84,12 +80,3 @@ func _rect_shape(size: Vector2) -> CollisionShape2D:
 	rect.size = size
 	col.shape = rect
 	return col
-
-
-func _rect_visual(size: Vector2, color: Color) -> ColorRect:
-	var vis := ColorRect.new()
-	vis.size = size
-	vis.position = -size / 2
-	vis.color = color
-	vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return vis

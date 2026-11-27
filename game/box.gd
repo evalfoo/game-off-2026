@@ -19,4 +19,8 @@ func _physics_process(delta: float) -> void:
 		return
 	velocity.x = 0.0
 	velocity.y += gravity * delta
+	# Only a push moves it sideways. Stepping out of a box pressed against it
+	# would let a push carry on through to that box.
+	var x := position.x
 	move_and_slide()
+	position.x = x

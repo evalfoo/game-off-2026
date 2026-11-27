@@ -1,5 +1,5 @@
 {
-  "readout": "Arrows: move   Space: jump   Shift: hold\nsize: 32 x 48\nmass: 1.0\nspeed: 300",
+  "readout": "Arrows: move   Space: jump   Shift: hold\nsize: 10 x 16\nmass: 1.0\nspeed: 100",
   "actions": [
     {
       "name": "click",
@@ -60,38 +60,38 @@
   "last_action": {},
   "ui": [
     {
-      "node": "Main/BoxA/@Label@10",
+      "node": "Main/BoxA/@Label@4",
       "class": "Label",
       "text": "BOX A\nmass 2",
       "rect": [
-        726,
-        740,
-        54,
-        49
+        640,
+        464,
+        108,
+        108
       ],
       "disabled": false
     },
     {
-      "node": "Main/BoxB/@Label@13",
+      "node": "Main/BoxB/@Label@7",
       "class": "Label",
       "text": "BOX B\nmass 8",
       "rect": [
-        1010,
-        708,
-        54,
-        49
+        896,
+        400,
+        108,
+        108
       ],
       "disabled": false
     },
     {
       "node": "Main/Readout",
       "class": "Label",
-      "text": "Arrows: move   Space: jump   Shift: hold\nsize: 32 x 48\nmass: 1.0\nspeed: 300",
+      "text": "Arrows: move   Space: jump   Shift: hold\nsize: 10 x 16\nmass: 1.0\nspeed: 100",
       "rect": [
         16,
-        16,
-        304,
-        101
+        8,
+        608,
+        228
       ],
       "disabled": false
     }
