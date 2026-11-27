@@ -4,9 +4,10 @@ extends "res://tools/clips/scenario.gd"
 # floor, walks right off its end and falls to the floor. The wide room has no
 # ledge that high, so this adds one, the same on both refs. Pass -- --big to
 # hold Shift throughout, and -- --high for a ledge 640 px above the floor, with
-# the camera's top limit open so the view can show it.
+# the camera's top limit open so the view can show it. --window-bottom=<px>
+# sets the camera's window_bottom, on refs that have it.
 #
-#   tools/clips/record.sh tools/clips/scenarios/fall.gd [-- --big] [--high]
+#   tools/clips/record.sh tools/clips/scenarios/fall.gd [-- --big] [--high] [--window-bottom=79.6]
 
 const Tiles := preload("res://game/tiles.gd")
 # A platform in row 9, its top 112 px above the floor, or with --high in row
@@ -28,7 +29,11 @@ func run() -> void:
 	game.player.position = Vector2((LEDGE_FIRST + 4) * Tiles.TILE, row * Tiles.TILE)
 	if high:
 		game.camera.limit_top = -10000000
-	fixture("the wide room with a ledge added at y %d, %s player" % [row * Tiles.TILE, "big" if big else "small"])
+	var bottom := _arg("--window-bottom=", "")
+	if bottom != "":
+		game.camera.set("window_bottom", bottom.to_float())
+	fixture("the wide room with a ledge added at y %d, %s player%s" % [row * Tiles.TILE, "big" if big else "small",
+		", window_bottom %s" % bottom if bottom != "" else ""])
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
 	await hold(3.0)
