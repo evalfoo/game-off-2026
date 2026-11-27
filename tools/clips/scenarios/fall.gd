@@ -25,7 +25,7 @@ func run() -> void:
 	game.free()
 	game = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	root.add_child(game)
-	Tiles.platform(game.get_node("Tiles"), row, LEDGE_FIRST, LEDGE_LAST)
+	Tiles.platform(game.get_node("View/World/Tiles" if "view" in game else "Tiles"), row, LEDGE_FIRST, LEDGE_LAST)
 	game.player.position = Vector2((LEDGE_FIRST + 4) * Tiles.TILE, row * Tiles.TILE)
 	if high:
 		game.camera.limit_top = -10000000

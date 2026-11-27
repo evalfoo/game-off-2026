@@ -47,7 +47,7 @@ func run() -> void:
 func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
 	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	root.add_child(room)
-	Tiles.platform(room.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
+	Tiles.platform(room.view.world.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
 	var player: CharacterBody2D = room.player
 	camera = room.camera
 	var floor_y: float = room.FLOOR_Y
@@ -117,7 +117,7 @@ func _check_start_in_air(smoothing: float) -> void:
 	camera.limit_bottom = int(size.y)
 	camera.small_smoothing_speed = smoothing
 	camera.big_smoothing_speed = smoothing
-	room.add_child(camera)
+	room.view.world.add_child(camera)
 	var lowest := -INF
 	for i: int in 300:
 		await physics(1)
@@ -144,7 +144,7 @@ func _check_plank() -> void:
 	camera.limit_left = 0
 	camera.limit_right = 320
 	camera.limit_bottom = 180
-	room.add_child(camera)
+	room.view.world.add_child(camera)
 	await physics(60)
 	var floor_view_y := _centre().y
 

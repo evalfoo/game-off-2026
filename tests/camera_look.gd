@@ -192,7 +192,7 @@ func _check_walk_off_looking_up() -> void:
 func _check_down_at_top() -> void:
 	_new_room()
 	var player: CharacterBody2D = room.player
-	Tiles.platform(room.get_node("Tiles"), 2, 4, 12)
+	Tiles.platform(room.view.world.get_node("Tiles"), 2, 4, 12)
 	player.position = Vector2(8 * Tiles.TILE, 2 * Tiles.TILE)
 	await physics(120)
 	check(player.is_on_floor() and absf(_centre_y() - HALF_VIEW.y) < 0.01,

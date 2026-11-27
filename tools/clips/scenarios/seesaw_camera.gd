@@ -21,7 +21,7 @@ func run() -> void:
 	camera.limit_left = 0
 	camera.limit_right = 320
 	camera.limit_bottom = 180
-	game.add_child(camera)
+	(game.view.world if "view" in game else game).add_child(camera)
 	fixture("the seesaw room with a camera added, its top limit open")
 	await hold(1.0)
 	start_clip()
