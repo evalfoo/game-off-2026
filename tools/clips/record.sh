@@ -44,6 +44,7 @@ fail() { echo "$*" >&2; exit 1; }
 command -v xvfb-run >/dev/null || fail "xvfb-run is missing. It comes with Xvfb (the xvfb package on Debian and Ubuntu)."
 timeout --foreground 1 true 2>/dev/null || fail "GNU timeout is missing. It comes with coreutils."
 command -v ffmpeg >/dev/null || fail "ffmpeg is missing. Install it and put it on PATH."
+command -v ffprobe >/dev/null || fail "ffprobe is missing. It comes with ffmpeg; put it on PATH."
 ffmpeg -hide_banner -filters 2>/dev/null | grep ' drawtext ' >/dev/null || fail "ffmpeg has no drawtext filter. Use a build with libfreetype."
 command -v godot >/dev/null || fail "godot is missing. Run 'mise install' or put Godot 4.7 on PATH."
 font=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
@@ -221,9 +222,18 @@ done
 
 if [ ${#refs[@]} -eq 2 ]; then
   echo "== side by side"
+  # Each half is 960 px wide. When the refs open different window sizes, the
+  # shorter half is padded to the taller one's height, since hstack needs both
+  # heights to match.
+  heights=()
+  for clip in "$out/before.mp4" "$out/after.mp4"; do
+    size=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$clip")
+    heights+=($(( (960 * ${size#*,} / ${size%,*} + 1) / 2 * 2 )))
+  done
+  height=$(( heights[0] > heights[1] ? heights[0] : heights[1] ))
   ffmpeg -v error -y -i "$out/before.mp4" -i "$out/after.mp4" -filter_complex \
-    "[0]scale=960:-2,drawtext=fontfile=$font:textfile=${captions[0]}:x=12:y=12:fontsize=26:fontcolor=white:box=1:boxcolor=black@0.7:boxborderw=8[a];\
-     [1]scale=960:-2,drawtext=fontfile=$font:textfile=${captions[1]}:x=12:y=12:fontsize=26:fontcolor=white:box=1:boxcolor=black@0.7:boxborderw=8[b];\
+    "[0]scale=960:${heights[0]},pad=960:$height:0:(oh-ih)/2,drawtext=fontfile=$font:textfile=${captions[0]}:x=12:y=12:fontsize=26:fontcolor=white:box=1:boxcolor=black@0.7:boxborderw=8[a];\
+     [1]scale=960:${heights[1]},pad=960:$height:0:(oh-ih)/2,drawtext=fontfile=$font:textfile=${captions[1]}:x=12:y=12:fontsize=26:fontcolor=white:box=1:boxcolor=black@0.7:boxborderw=8[b];\
      [a][b]hstack" -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -movflags +faststart "$out/before-after.mp4"
 fi
 
