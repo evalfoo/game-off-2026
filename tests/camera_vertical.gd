@@ -5,7 +5,7 @@ extends "res://tests/lib/test.gd"
 # high ledge to the wide room and a camera to the seesaw room.
 #
 # A fall: at both sizes, the player walks off a ledge 112 px above the wide
-# room's floor, and off one 736 px above it with the camera's top limit open.
+# room's floor, and off one 640 px above it with the camera's top limit open.
 # Every physics frame of the fall, the landing's included, the whole player
 # stays inside the view and the feet no lower than the camera window's bottom
 # edge, and after landing the view settles on the floor's height.
@@ -22,9 +22,9 @@ const PlayerCamera := preload("res://game/camera.gd")
 const Tiles := preload("res://game/tiles.gd")
 const HALF_VIEW := Vector2(160, 90)
 # The ledges: platforms in row 9, their top 112 px above the floor, and in row
-# -30, 736 px above it.
+# -24, 640 px above it.
 const LEDGE_ROW := 9
-const HIGH_LEDGE_ROW := -30
+const HIGH_LEDGE_ROW := -24
 const LEDGE_FIRST := 40
 const LEDGE_LAST := 45
 
