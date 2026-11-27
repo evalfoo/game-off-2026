@@ -29,8 +29,9 @@ func _ready() -> void:
 	position_smoothing_enabled = true
 	position_smoothing_speed = smoothing_speed
 	position = target.position - Vector2(0, feet_below_centre)
-	# Starts centred on the player, from the first frame drawn, rather than
-	# gliding in from where Camera2D stood as it entered the tree.
+	# Centres the view on the player now. Camera2D's own first update ran as it
+	# entered the tree, before this position, so until the next physics step
+	# the view would sit at the room's top-left corner.
 	align()
 	reset_smoothing()
 	force_update_scroll()
