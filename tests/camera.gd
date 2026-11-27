@@ -30,8 +30,13 @@ func _check_size(big: bool) -> void:
 	root.add_child(room)
 	player = room.player
 	camera = room.camera
+	# The route's turns and walks are sized for a 32 px half window, so both
+	# sizes get that one, whatever the game's tuning. tests/camera_sizes.gd
+	# checks the blend between sizes.
+	camera.small_window_margin = 0.2
+	camera.big_window_margin = 0.2
 	var feet_below: float = camera.feet_below_centre
-	var margin: float = (camera.big_window_margin if big else camera.small_window_margin) * HALF_VIEW.x
+	var margin: float = camera.small_window_margin * HALF_VIEW.x
 	var floor_y: float = room.FLOOR_Y
 	var size: Vector2 = room.SIZE
 	var small_ahead: float = camera.small_look_ahead

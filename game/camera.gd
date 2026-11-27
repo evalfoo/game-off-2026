@@ -83,6 +83,9 @@ func _apply_size() -> void:
 	drag_left_margin = margin
 	drag_right_margin = margin
 	position_smoothing_speed = lerpf(small_smoothing_speed, big_smoothing_speed, target.t)
+	# Setting the smoothing speed turns Camera2D's own physics update back on;
+	# _physics_process updates the view instead (see _ready).
+	set_physics_process_internal(false)
 
 
 func _look_ahead_x() -> float:

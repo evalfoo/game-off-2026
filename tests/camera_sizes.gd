@@ -1,10 +1,12 @@
 extends "res://tests/lib/test.gd"
 
 # The camera window, smoothing and look-ahead blend from their small values to
-# their big ones as the player grows: checked small, partway and big. The big
-# window and smoothing start equal to the small ones, so the test sets its own
-# big values to tell them apart. Big, the view settles the big look-ahead less
-# the big window's half width ahead of a player who walked right.
+# their big ones as the player grows: checked small, partway and big. The test
+# sets its own small and big values, all different, so the game's tuning can't
+# hide a blend. Big, the view settles the big look-ahead less the big window's
+# half width ahead of a player who walked right. After growing and shrinking
+# back, walking eases as it does in a fresh room: Camera2D's own physics update,
+# which setting the smoothing speed turns back on, stays off.
 
 const HALF_VIEW_X := 160.0
 
@@ -14,14 +16,12 @@ var camera: Camera2D
 
 
 func run() -> void:
-	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	player = room.player
-	camera = room.camera
-	camera.big_window_margin = 0.1
-	camera.big_smoothing_speed = 2.0
-	await physics(1)
+	# A fresh small walk, to compare with one after growing and shrinking.
+	await _open_room()
+	var fresh_lag := await _walk_lag()
+	_close_room()
 
+	await _open_room()
 	_check_blend("small")
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(12)
@@ -44,7 +44,47 @@ func run() -> void:
 	check(absf(lead - expected) < 0.5,
 		"big: after walking right the view settles %.1f px ahead of the player, expected %.1f" % [lead, expected])
 	Events.hold_key(KEY_SHIFT, false)
+	_close_room()
+
+	# Grow and shrink back, then walk as in the fresh room.
+	await _open_room()
+	Events.hold_key(KEY_SHIFT, true)
+	await physics(40)
+	Events.hold_key(KEY_SHIFT, false)
+	await physics(40)
+	_check_blend("shrunk back")
+	var lag := await _walk_lag()
+	check(absf(lag - fresh_lag) < 0.5,
+		"shrunk back: walking right, the view trails the window's edge by %.1f px, as in a fresh room: %.1f px" % [lag, fresh_lag])
+	_close_room()
+
+
+func _open_room() -> void:
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	player = room.player
+	camera = room.camera
+	camera.small_window_margin = 0.2
+	camera.big_window_margin = 0.1
+	camera.small_smoothing_speed = 5.0
+	camera.big_smoothing_speed = 2.0
+	camera.small_look_ahead = 80.0
+	camera.big_look_ahead = 48.0
+	await physics(1)
+
+
+func _close_room() -> void:
 	room.free()
+
+
+# Walks right for 2 seconds and returns how far the view's centre trails the
+# window's right edge on the look-ahead point.
+func _walk_lag() -> float:
+	Events.hold_key(KEY_RIGHT, true)
+	await physics(120)
+	Events.hold_key(KEY_RIGHT, false)
+	var margin: float = camera.drag_right_margin * HALF_VIEW_X
+	return camera.position.x - margin - camera.get_screen_center_position().x
 
 
 # Checks the window, smoothing and look-ahead point match the blend at the
@@ -60,6 +100,8 @@ func _check_blend(label: String) -> void:
 		"%s: at t %.2f the smoothing speed is %.2f: %.2f" % [label, t, smoothing, camera.position_smoothing_speed])
 	check(absf(camera.position.x - player.position.x - ahead) < 0.01,
 		"%s: at t %.2f the look-ahead point is %.1f px ahead: %.1f" % [label, t, ahead, camera.position.x - player.position.x])
+	check(not camera.is_physics_processing_internal(),
+		"%s: Camera2D's own physics update stays off" % label)
 
 
 func _check_between(property: String, setting: String) -> void:
