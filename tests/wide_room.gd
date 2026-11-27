@@ -6,7 +6,8 @@ extends "res://tests/lib/test.gd"
 # are the tiles' bounds less the wall column on each side, which match the
 # room's SIZE. Staged: edits to the scene before it starts show up in the
 # game. A moved marker and a wall painted further right give a new start and
-# right limit, and the layer and marker moved together move the limits too.
+# right limit, and the layer and marker moved together, or mirrored, keep the
+# limits on the room.
 
 const Tiles := preload("res://game/tiles.gd")
 
@@ -69,6 +70,25 @@ func run() -> void:
 	await physics(10)
 	check(player.is_on_floor() and absf(player.position.y - (room.FLOOR_Y + shift.y)) < 0.01,
 		"the player starts on the moved floor: %s" % player.position)
+	room.free()
+	await physics(2)
+
+	# Staged: the layer mirrored left to right in place, the marker with it.
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	var flipped := room.get_node("Tiles") as Node2D
+	flipped.scale = Vector2(-1, 1)
+	flipped.position = Vector2(size.x, 0)
+	var start_node := room.get_node("PlayerStart") as Node2D
+	start_node.position.x = size.x - start_node.position.x
+	root.add_child(room)
+	player = room.player
+	camera = room.camera
+	var limits_flipped := Rect2i(camera.limit_left, camera.limit_top,
+			camera.limit_right - camera.limit_left, camera.limit_bottom - camera.limit_top)
+	check(limits_flipped == Rect2i(Vector2i.ZERO, Vector2i(size)),
+		"mirroring the layer keeps the camera's limits on the room: %s" % limits_flipped)
+	await physics(10)
+	check(player.is_on_floor(), "the player starts on the mirrored floor: %s" % player.position)
 	room.free()
 
 

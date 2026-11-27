@@ -47,14 +47,14 @@ func _ready() -> void:
 	camera = PlayerCamera.new()
 	camera.name = "Camera"
 	camera.target = player
-	# The bounds in cells, then in the world, wherever the layer sits.
-	var bounds := tiles.get_used_rect().grow_individual(-1, 0, -1, 0)
-	var top_left := tiles.transform * Vector2(bounds.position * Tiles.TILE)
-	var bottom_right := tiles.transform * Vector2(bounds.end * Tiles.TILE)
-	camera.limit_left = roundi(top_left.x)
-	camera.limit_top = roundi(top_left.y)
-	camera.limit_right = roundi(bottom_right.x)
-	camera.limit_bottom = roundi(bottom_right.y)
+	# The bounds in cells, then in the world, wherever the layer sits, also
+	# when it's flipped.
+	var cells := tiles.get_used_rect().grow_individual(-1, 0, -1, 0)
+	var bounds := tiles.transform * Rect2(cells.position * Tiles.TILE, cells.size * Tiles.TILE)
+	camera.limit_left = roundi(bounds.position.x)
+	camera.limit_top = roundi(bounds.position.y)
+	camera.limit_right = roundi(bounds.end.x)
+	camera.limit_bottom = roundi(bounds.end.y)
 	view.world.add_child(camera)
 
 	# On its own canvas layer, so it stays put while the view scrolls.
