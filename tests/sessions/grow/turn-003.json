@@ -11,7 +11,7 @@
   },
   "ui": [
     {
-      "node": "Main/BoxA/@Label@4",
+      "node": "Main/View/BoxALabel",
       "class": "Label",
       "text": "BOX A\nmass 2",
       "rect": [
@@ -23,7 +23,7 @@
       "disabled": false
     },
     {
-      "node": "Main/BoxB/@Label@7",
+      "node": "Main/View/BoxBLabel",
       "class": "Label",
       "text": "BOX B\nmass 8",
       "rect": [

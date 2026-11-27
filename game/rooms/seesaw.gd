@@ -7,6 +7,7 @@ extends Node2D
 const Player := preload("res://game/player.gd")
 const Tiles := preload("res://game/tiles.gd")
 const Plank := preload("res://game/seesaw_plank.gd")
+const PixelView := preload("res://game/pixel_view.gd")
 
 # The floor's top edge, as in game/main.gd. The player starts standing on it.
 const FLOOR_Y := 160.0
@@ -21,11 +22,14 @@ const FONT_SIZE := 8
 
 var player: Player
 var plank: Plank
+var view := PixelView.new()
 var readout := Label.new()
 
 
 func _ready() -> void:
-	add_child(Tiles.room(FLOOR_Y))
+	view.name = "View"
+	add_child(view)
+	view.world.add_child(Tiles.room(FLOOR_Y))
 
 	var pivot := StaticBody2D.new()
 	pivot.name = "Pivot"
@@ -37,7 +41,7 @@ func _ready() -> void:
 	var pivot_shape := CollisionPolygon2D.new()
 	pivot_shape.polygon = triangle.polygon
 	pivot.add_child(pivot_shape)
-	add_child(pivot)
+	view.world.add_child(pivot)
 
 	# Turns on the pivot's tip, between its ends resting on the floor on
 	# either side. Starts level; the weight turns its right end down.
@@ -63,12 +67,12 @@ func _ready() -> void:
 	weight_label.add_theme_font_size_override("font_size", FONT_SIZE)
 	weight_label.position = weight_at - WEIGHT_SIZE / 2 - Vector2(0, 28)
 	plank.add_child(weight_label)
-	add_child(plank)
+	view.world.add_child(plank)
 
 	player = Player.new()
 	player.name = "Player"
 	player.position = Vector2(43, FLOOR_Y)
-	add_child(player)
+	view.world.add_child(player)
 
 	readout.name = "Readout"
 	readout.position = Vector2(4, 2)
