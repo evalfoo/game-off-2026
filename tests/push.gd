@@ -1,7 +1,8 @@
 extends "res://tests/lib/test.gd"
 
 # BOX B is too heavy for the small player. Only the big one pushes it. The
-# player can only push one box: not BOX A when it rests against BOX B.
+# player can only push one box: not BOX A when it rests against BOX B. A box's
+# label, drawn outside the world image, follows the box and goes with it.
 
 func run() -> void:
 	var small_push := await _push(false)
@@ -14,19 +15,25 @@ func run() -> void:
 # Walks right into BOX B for 3 seconds and returns how far the box moved.
 func _push(big: bool) -> float:
 	var game := Fixture.launch(root)
-	game.get_node("BoxA").free()
-	var box: CharacterBody2D = game.get_node("BoxB")
+	game.get_node("View/World/BoxA").free()
+	var box: CharacterBody2D = game.get_node("View/World/BoxB")
 	var player: CharacterBody2D = game.player
 	player.position.x = box.position.x - 50
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
 	await physics(40)
 	var start := box.position.x
+	var label: Label = game.get_node("View/BoxBLabel")
+	var label_start := label.position.x
 	Events.hold_key(KEY_RIGHT, true)
 	await physics(180)
 	Events.hold_key(KEY_RIGHT, false)
 	Events.hold_key(KEY_SHIFT, false)
 	var moved := box.position.x - start
+	await process_frame
+	check(absf(label.position.x - label_start - moved) < 1.0,
+		"BOX B's label moves with it: box %.1f px, label %.1f px" % [moved, label.position.x - label_start])
+	check(not game.has_node("View/BoxALabel"), "BOX A's label goes with BOX A")
 	game.free()
 	await physics(2)
 	return moved
@@ -35,8 +42,8 @@ func _push(big: bool) -> float:
 # and returns how far BOX A moved.
 func _push_stack() -> float:
 	var game := Fixture.launch(root)
-	var box_a: CharacterBody2D = game.get_node("BoxA")
-	var box_b: CharacterBody2D = game.get_node("BoxB")
+	var box_a: CharacterBody2D = game.get_node("View/World/BoxA")
+	var box_b: CharacterBody2D = game.get_node("View/World/BoxB")
 	box_a.position.x = box_b.position.x - 16 - 8
 	var player: CharacterBody2D = game.player
 	player.position.x = box_a.position.x - 50

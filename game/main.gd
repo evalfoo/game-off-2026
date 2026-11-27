@@ -7,6 +7,7 @@ extends Node2D
 const Player := preload("res://game/player.gd")
 const Tiles := preload("res://game/tiles.gd")
 const Box := preload("res://game/box.gd")
+const PixelView := preload("res://game/pixel_view.gd")
 
 # The floor's top edge, at tile row 10 of the 320x180 view. The player starts
 # standing on it.
@@ -24,11 +25,14 @@ var save_directory := "user://"
 var rng_seed := randi()
 
 var player: Player
+var view := PixelView.new()
 var readout := Label.new()
 
 
 func _ready() -> void:
-	add_child(Tiles.room(FLOOR_Y))
+	view.name = "View"
+	add_child(view)
+	view.world.add_child(Tiles.room(FLOOR_Y))
 
 	_add_box("BoxA", "BOX A", Vector2(168, FLOOR_Y - 8), preload("res://art/box_a.png"), 2.0)
 	_add_box("BoxB", "BOX B", Vector2(240, FLOOR_Y - 16), preload("res://art/box_b.png"), 8.0)
@@ -36,7 +40,7 @@ func _ready() -> void:
 	player = Player.new()
 	player.name = "Player"
 	player.position = Vector2(56, FLOOR_Y)
-	add_child(player)
+	view.world.add_child(player)
 
 	readout.name = "Readout"
 	readout.position = Vector2(4, 2)
@@ -69,9 +73,9 @@ func _add_box(node_name: String, label_text: String, pos: Vector2, texture: Text
 	var label := Label.new()
 	label.text = "%s\nmass %d" % [label_text, box_mass]
 	label.add_theme_font_size_override("font_size", FONT_SIZE)
-	label.position = Vector2(-size.x / 2, -size.y / 2 - 28)
-	body.add_child(label)
-	add_child(body)
+	view.world.add_child(body)
+	label.name = node_name + "Label"
+	view.follow(label, body, Vector2(-size.x / 2, -size.y / 2 - 28))
 
 
 func _rect_shape(size: Vector2) -> CollisionShape2D:
