@@ -7,6 +7,8 @@ extends "res://tests/lib/test.gd"
 # half width ahead of a player who walked right. After growing and shrinking
 # back, walking eases as it does in a fresh room: Camera2D's own physics update,
 # which setting the smoothing speed turns back on, stays off.
+# A room with no window checks the look-ahead point the physics step applies:
+# there the camera's position is that point.
 
 const HALF_VIEW_X := 160.0
 
@@ -30,7 +32,6 @@ func run() -> void:
 	_check_blend("partway")
 	_check_between("drag_left_margin", "window_margin")
 	_check_between("position_smoothing_speed", "smoothing_speed")
-	_check_between_ahead()
 	await physics(30)
 	_check_blend("big")
 
@@ -56,6 +57,24 @@ func run() -> void:
 	var lag := await _walk_lag()
 	check(absf(lag - fresh_lag) < 0.5,
 		"shrunk back: walking right, the view trails the window's edge by %.1f px, as in a fresh room: %.1f px" % [lag, fresh_lag])
+	_close_room()
+
+	# With no window, the camera's position is the look-ahead point the physics
+	# step applied, so its blend shows small, partway and big.
+	await _open_room()
+	camera.small_window_margin = 0.0
+	camera.big_window_margin = 0.0
+	await physics(1)
+	_check_ahead("small")
+	Events.hold_key(KEY_SHIFT, true)
+	await physics(12)
+	_check_ahead("partway")
+	var partway: float = camera.position.x - player.position.x
+	check(partway > camera.big_look_ahead and partway < camera.small_look_ahead,
+		"partway: the look-ahead point %.1f px ahead sits between big %.1f and small %.1f" % [partway, camera.big_look_ahead, camera.small_look_ahead])
+	await physics(30)
+	_check_ahead("big")
+	Events.hold_key(KEY_SHIFT, false)
 	_close_room()
 
 
@@ -87,19 +106,15 @@ func _walk_lag() -> float:
 	return camera.position.x - camera.get_screen_center_position().x
 
 
-# Checks the window, smoothing and look-ahead point match the blend at the
-# player's t.
+# Checks the window and smoothing match the blend at the player's t.
 func _check_blend(label: String) -> void:
 	var t: float = player.t
 	var margin := lerpf(camera.small_window_margin, camera.big_window_margin, t)
 	var smoothing := lerpf(camera.small_smoothing_speed, camera.big_smoothing_speed, t)
-	var ahead := lerpf(camera.small_look_ahead, camera.big_look_ahead, t)
 	check(is_equal_approx(camera.drag_left_margin, margin) and is_equal_approx(camera.drag_right_margin, margin),
 		"%s: at t %.2f the window margin is %.3f: %.3f, %.3f" % [label, t, margin, camera.drag_left_margin, camera.drag_right_margin])
 	check(is_equal_approx(camera.position_smoothing_speed, smoothing),
 		"%s: at t %.2f the smoothing speed is %.2f: %.2f" % [label, t, smoothing, camera.position_smoothing_speed])
-	check(absf(_ahead() - ahead) < 0.01,
-		"%s: at t %.2f the look-ahead point is %.1f px ahead: %.1f" % [label, t, ahead, _ahead()])
 	check(not camera.is_physics_processing_internal(),
 		"%s: Camera2D's own physics update stays off" % label)
 
@@ -112,16 +127,13 @@ func _check_between(property: String, setting: String) -> void:
 		"partway: %s %.3f sits between small %.3f and big %.3f" % [property, value, a, b])
 
 
-func _check_between_ahead() -> void:
-	var ahead := _ahead()
-	check(ahead > camera.big_look_ahead and ahead < camera.small_look_ahead,
-		"partway: the look-ahead point %.1f px ahead sits between big %.1f and small %.1f" % [ahead, camera.big_look_ahead, camera.small_look_ahead])
-
-
-# How far ahead of the player the look-ahead point is. The view's position is
-# the window's centre, which can sit up to half the window behind the point.
-func _ahead() -> float:
-	return camera.call("_look_ahead_x") - player.position.x
+# Checks the camera's position, with no window, is the look-ahead point for the
+# player's t.
+func _check_ahead(label: String) -> void:
+	var t: float = player.t
+	var ahead := lerpf(camera.small_look_ahead, camera.big_look_ahead, t)
+	check(absf(camera.position.x - player.position.x - ahead) < 0.01,
+		"%s: at t %.2f the look-ahead point is %.1f px ahead: %.1f" % [label, t, ahead, camera.position.x - player.position.x])
 
 
 func physics(count: int) -> void:

@@ -10,8 +10,11 @@ extends "res://tests/lib/test.gd"
 # a marker by the right wall pulls the view only to the room's edge, and a
 # marker inside the room pulls a view resting at that edge back in, also with
 # the room away from the world's origin. At zoom 2 the window and the room's
-# edges use the smaller view. Every physics frame checks the view stays inside
-# the room.
+# edges use the smaller view. The pulled target stays inside the room's limits,
+# so letting go of Down by the bottom edge moves the view back at once and a
+# fall off a ledge by the top edge stays within the fall line. A camera started
+# in the air keeps its ordinary height. Every physics frame checks the view
+# stays inside the room.
 
 const HALF_VIEW := Vector2(160, 90)
 const INNER := 112.0
@@ -21,6 +24,8 @@ const SHARE := 0.5
 # ring, and six tiles above the floor, so the ring distances mix x and y.
 const MARK := Vector2(740, 160)
 const FAR := Vector2(-10000, -10000)
+const PlayerCamera := preload("res://game/camera.gd")
+const Tiles := preload("res://game/tiles.gd")
 
 var room: Node2D
 var player: CharacterBody2D
@@ -113,6 +118,14 @@ func run() -> void:
 	shift = Vector2.ZERO
 	await physics_frame
 	await _check_zoom()
+	await physics_frame
+	await _check_look_release()
+	await physics_frame
+	await _check_ledge_fall(5.0)
+	await physics_frame
+	await _check_ledge_fall(2.0)
+	await physics_frame
+	await _check_start_in_air()
 
 
 # The wide room placed one room's width right of the world's origin, with
@@ -191,6 +204,118 @@ func _check_zoom() -> void:
 	check(absf(resting - edge) < 0.01 and absf(_centre().x - edge) < 0.01,
 		"at zoom 2, by the right wall, a marker further right holds the view at the room's edge, %.1f: %.1f -> %.1f" % [edge, resting, _centre().x])
 	check(outside == 0, "at zoom 2, the view stays inside the room every frame: %d frames outside" % outside)
+	room.free()
+
+
+# Opens the wide room with a marker at `at` pulling with the given rings and
+# share.
+func _open(at: Vector2, inner: float, outer: float, share: float) -> void:
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	player = room.player
+	camera = room.camera
+	marker = Node2D.new()
+	marker.position = at
+	room.view.world.add_child(marker)
+	camera.call("pull_toward", marker, inner, outer, share)
+	outside = 0
+
+
+# Looking down by the room's bottom edge with a marker below the view: the
+# pulled target stays inside the limit, so letting go of Down starts the view
+# back up on the next step instead of waiting behind the limit.
+func _check_look_release() -> void:
+	await _open(Vector2(660, 206), INNER, OUTER, SHARE)
+	player.position.x = 640.0
+	await physics(150)
+	var bottom: float = room.SIZE.y - HALF_VIEW.y
+	var past := 0
+	Events.hold_key(KEY_DOWN, true)
+	for i: int in 150:
+		await physics(1)
+		if camera.position.y > bottom + 0.01:
+			past += 1
+	var held := _centre().y
+	Events.hold_key(KEY_DOWN, false)
+	var waited := 0
+	for i: int in 30:
+		await physics(1)
+		if _centre().y < held - 0.01:
+			break
+		waited += 1
+	await physics(150)
+	check(past == 0 and absf(held - bottom) < 0.01 and waited <= 1,
+		"looking down by the bottom edge with a marker below, the target passes the limit on %d frames, the view holds at %.1f, and after letting go it waits %d steps and settles at %.1f" % [
+			past, held, waited, _centre().y])
+	check(outside == 0, "looking down with a marker, the view stays inside the room every frame: %d frames outside" % outside)
+	room.free()
+
+
+# Walking off a ledge by the room's top edge, with a marker above the view
+# pulling at 0.75: the target stays inside the limit, so the fall line keeps
+# the feet within window_bottom of the view's centre.
+func _check_ledge_fall(smoothing: float) -> void:
+	await _open(Vector2(720, 32), 192.0, 256.0, 0.75)
+	camera.small_smoothing_speed = smoothing
+	camera.big_smoothing_speed = smoothing
+	for node: Node in room.view.world.get_children():
+		if node is TileMapLayer:
+			Tiles.platform(node as TileMapLayer, 10, 40, 45)
+	player.position = Vector2(700, 160)
+	await physics(150)
+	var on_ledge := player.is_on_floor() and absf(player.position.y - 160.0) < 0.5
+	var lowest := -INF
+	var left := false
+	Events.hold_key(KEY_RIGHT, true)
+	for i: int in 300:
+		await physics(1)
+		if not player.is_on_floor():
+			left = true
+			lowest = maxf(lowest, player.position.y - _centre().y)
+		elif left:
+			break
+	Events.hold_key(KEY_RIGHT, false)
+	var line: float = camera.window_bottom
+	check(on_ledge and left and lowest <= line + 0.01,
+		"smoothing speed %.0f: walking off a ledge under a marker by the top edge, the feet fall at most %.2f px below the view's centre, the fall line %.0f" % [
+			smoothing, lowest, line])
+	check(outside == 0, "falling off the ledge, the view stays inside the room every frame: %d frames outside" % outside)
+	room.free()
+
+
+# A camera added while the player is in the air, with a marker above already
+# pulling: its first view keeps the ordinary height, and the fall keeps the
+# feet within window_bottom of the view's centre.
+func _check_start_in_air() -> void:
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	player = room.player
+	room.camera.free()
+	player.position = Vector2(600, 226)
+	marker = Node2D.new()
+	marker.position = Vector2(600, 90)
+	room.view.world.add_child(marker)
+	var size: Vector2 = room.SIZE
+	camera = PlayerCamera.new()
+	camera.target = player
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = int(size.x)
+	camera.limit_bottom = int(size.y)
+	camera.call("pull_toward", marker, 144.0, 192.0, SHARE)
+	room.view.world.add_child(camera)
+	outside = 0
+	var first := player.position.y - _centre().y
+	var lowest := first
+	for i: int in 120:
+		await physics(1)
+		lowest = maxf(lowest, player.position.y - _centre().y)
+		if player.is_on_floor():
+			break
+	var line: float = camera.window_bottom
+	check(first <= line and lowest <= line + 0.5,
+		"starting in the air under a pulling marker, the first view puts the feet %.2f px below its centre, and the fall at most %.2f, the fall line %.0f" % [
+			first, lowest, line])
 	room.free()
 
 

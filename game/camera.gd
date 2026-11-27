@@ -100,7 +100,12 @@ func _ready() -> void:
 	_rng.seed = rng_seed
 	_furthest = target.position.x
 	_window_x = _look_ahead_x()
-	position = _pulled(Vector2(_window_x, _inside_limits(target.position.y - feet_below_centre)))
+	var start := Vector2(_window_x, _inside_limits(target.position.y - feet_below_centre))
+	position = _pulled(start)
+	# A pull moves the height only on a floor, as in _physics_process, so a
+	# start in the air keeps the ordinary height.
+	if not target.is_on_floor() or _on_plank():
+		position.y = start.y
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
 	# the view would sit at the room's top-left corner.
@@ -288,10 +293,12 @@ func _pulled(point: Vector2) -> Vector2:
 			toward = at
 	if amount == 0.0:
 		return point
-	# The limits are in world space, and point is in the parent's.
-	var world := frame * point
+	# The limits are in world space, and point is in the parent's. The pulled
+	# point stays inside them too: Camera2D clamps only the view it shows, so a
+	# target past a limit would leave the eased position there, and the view
+	# would wait at the edge after the pull or a fall moves it away.
 	var half_view := get_viewport_rect().size * 0.5 / zoom
-	var resting := frame.affine_inverse() * (Vector2(
-		clampf(world.x, limit_left + half_view.x, limit_right - half_view.x),
-		clampf(world.y, limit_top + half_view.y, limit_bottom - half_view.y)))
-	return resting.lerp(toward, amount)
+	var low := Vector2(limit_left, limit_top) + half_view
+	var high := Vector2(limit_right, limit_bottom) - half_view
+	var resting := frame.affine_inverse() * (frame * point).clamp(low, high)
+	return frame.affine_inverse() * (frame * resting.lerp(toward, amount)).clamp(low, high)
