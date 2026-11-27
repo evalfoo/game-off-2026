@@ -60,26 +60,26 @@
   "last_action": {},
   "ui": [
     {
-      "node": "Main/View/World/BoxA/@Label@4",
+      "node": "Main/View/BoxALabel",
       "class": "Label",
       "text": "BOX A\nmass 2",
       "rect": [
-        161,
-        117,
-        27,
-        27
+        640,
+        464,
+        108,
+        108
       ],
       "disabled": false
     },
     {
-      "node": "Main/View/World/BoxB/@Label@7",
+      "node": "Main/View/BoxBLabel",
       "class": "Label",
       "text": "BOX B\nmass 8",
       "rect": [
-        225,
-        101,
-        27,
-        27
+        896,
+        400,
+        108,
+        108
       ],
       "disabled": false
     },

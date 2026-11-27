@@ -11,10 +11,16 @@ extends Node2D
 # so the image can sit between game pixels. A room adds its world, with its
 # camera, to `world`. What the room adds to itself after this node, such as its
 # readout, draws above the image and holds still while the camera moves.
+#
+# follow() shows a label above a body in the world from the window's viewport
+# instead, so the play driver reads its rectangle in window pixels. The window
+# snaps it to whole game pixels, so under a moving camera it can sit up to a
+# pixel off the image. It doesn't turn with its body.
 
 const VIEW := Vector2i(320, 180)
 
 var world := SubViewport.new()
+var _followers: Array[Follower] = []
 # Where the image's top-left corner sits, in game pixels: up to one pixel up
 # and left of the window's, at whole screen pixels.
 var _corner := -Vector2.ONE
@@ -44,6 +50,32 @@ func _process(_delta: float) -> void:
 	var scale := get_viewport_transform().get_scale()
 	_corner = ((rest - Vector2.ONE) * scale).round() / scale
 	queue_redraw()
+	for follower in _followers:
+		follower.place(world.canvas_transform)
+
+
+# Adds `control` to this node, above the image, and keeps it at `offset` from
+# `target`'s position in the world. It goes when `target` leaves the tree.
+func follow(control: Control, target: Node2D, offset: Vector2) -> void:
+	var follower := Follower.new()
+	follower.control = control
+	follower.target = target
+	follower.offset = offset
+	_followers.append(follower)
+	add_child(control)
+	follower.place(world.canvas_transform)
+	target.tree_exiting.connect(func() -> void:
+		_followers.erase(follower)
+		control.queue_free())
+
+
+class Follower:
+	var control: Control
+	var target: Node2D
+	var offset: Vector2
+
+	func place(view: Transform2D) -> void:
+		control.position = view * (target.global_position + offset)
 
 
 func _draw() -> void:

@@ -73,9 +73,9 @@ func _add_box(node_name: String, label_text: String, pos: Vector2, texture: Text
 	var label := Label.new()
 	label.text = "%s\nmass %d" % [label_text, box_mass]
 	label.add_theme_font_size_override("font_size", FONT_SIZE)
-	label.position = Vector2(-size.x / 2, -size.y / 2 - 28)
-	body.add_child(label)
 	view.world.add_child(body)
+	label.name = node_name + "Label"
+	view.follow(label, body, Vector2(-size.x / 2, -size.y / 2 - 28))
 
 
 func _rect_shape(size: Vector2) -> CollisionShape2D:
