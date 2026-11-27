@@ -61,7 +61,7 @@ func _ready() -> void:
 	# _physics_process updates it instead, once, after setting the target.
 	set_physics_process_internal(false)
 	_furthest = target.position.x
-	position = Vector2(_look_ahead_x(), target.position.y - feet_below_centre)
+	position = Vector2(_look_ahead_x(), _inside_limits(target.position.y - feet_below_centre))
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
 	# the view would sit at the room's top-left corner.
@@ -74,14 +74,16 @@ func _physics_process(delta: float) -> void:
 	position.x = _look_ahead_x()
 	var centre_y := get_screen_center_position().y
 	var share := position_smoothing_speed * delta
-	if target.is_on_floor() and not _on_plank():
-		position.y = _inside_limits(target.position.y - feet_below_centre)
-	elif target.position.y > centre_y + window_bottom and share > 0.0:
+	# Checked before the floor, as the step a fall lands can drop the feet
+	# well past the line, and easing toward the standing height would trail.
+	if target.position.y > centre_y + window_bottom and share > 0.0:
 		# Smoothing moves the view `share` of the way to its target each
 		# step, so aiming that much further puts the window's bottom edge on the
 		# feet this step instead of trailing a fast fall.
 		var wanted := _inside_limits(target.position.y - window_bottom)
 		position.y = centre_y + (wanted - centre_y) / share
+	elif target.is_on_floor() and not _on_plank():
+		position.y = _inside_limits(target.position.y - feet_below_centre)
 	else:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.

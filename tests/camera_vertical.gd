@@ -5,9 +5,14 @@ extends "res://tests/lib/test.gd"
 # high ledge to the wide room and a camera to the seesaw room.
 #
 # A fall: at both sizes, the player walks off a ledge 112 px above the wide
-# room's floor. Every physics frame of the fall, the whole player stays inside
-# the view and the feet no lower than the camera window's bottom edge, and
-# after landing the view settles on the floor's height.
+# room's floor, and off one 736 px above it with the camera's top limit open.
+# Every physics frame of the fall, the landing's included, the whole player
+# stays inside the view and the feet no lower than the camera window's bottom
+# edge, and after landing the view settles on the floor's height.
+#
+# A start in the air: the room's camera is swapped for one added while the
+# player is in the air near the room's top. Falling to the floor keeps the
+# feet on or above the window's bottom edge.
 #
 # The plank: in the seesaw room, the player stands on the plank's raised end,
 # grows to push it down and shrinks to let it rise again. The feet move with
@@ -16,8 +21,10 @@ extends "res://tests/lib/test.gd"
 const PlayerCamera := preload("res://game/camera.gd")
 const Tiles := preload("res://game/tiles.gd")
 const HALF_VIEW := Vector2(160, 90)
-# The ledge: a platform in row 9, its top 112 px above the floor.
+# The ledges: platforms in row 9, their top 112 px above the floor, and in row
+# -30, 736 px above it.
 const LEDGE_ROW := 9
+const HIGH_LEDGE_ROW := -30
 const LEDGE_FIRST := 40
 const LEDGE_LAST := 45
 
@@ -25,20 +32,26 @@ var camera: Camera2D
 
 
 func run() -> void:
-	await _check_fall(false)
-	await _check_fall(true)
+	await _check_fall(false, LEDGE_ROW)
+	await _check_fall(true, LEDGE_ROW)
+	await _check_fall(false, HIGH_LEDGE_ROW)
+	await _check_fall(true, HIGH_LEDGE_ROW)
+	await _check_start_in_air()
 	await _check_plank()
 
 
-func _check_fall(big: bool) -> void:
-	var label := "big" if big else "small"
+func _check_fall(big: bool, ledge_row: int) -> void:
 	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	root.add_child(room)
-	Tiles.platform(room.get_node("Tiles"), LEDGE_ROW, LEDGE_FIRST, LEDGE_LAST)
+	Tiles.platform(room.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
 	var player: CharacterBody2D = room.player
 	camera = room.camera
 	var floor_y: float = room.FLOOR_Y
-	var ledge_y := float(LEDGE_ROW * Tiles.TILE)
+	var ledge_y := float(ledge_row * Tiles.TILE)
+	var label := "%s, %d px drop" % ["big" if big else "small", floor_y - ledge_y]
+	# Above the room: the top limit opens so the view can show the ledge.
+	if ledge_y < 0.0:
+		camera.limit_top = -10000000
 	player.position = Vector2((LEDGE_FIRST + 3) * Tiles.TILE, ledge_y)
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
@@ -77,6 +90,34 @@ func _check_fall(big: bool) -> void:
 	check(absf(_centre().y - (floor_y - feet_below)) < 0.5,
 		"%s: after landing the view settles %d px above the feet: %.1f" % [label, feet_below, _centre().y])
 	Events.hold_key(KEY_SHIFT, false)
+	room.free()
+	await physics_frame
+	await physics_frame
+
+
+func _check_start_in_air() -> void:
+	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	var player: CharacterBody2D = room.player
+	var size: Vector2 = room.SIZE
+	room.camera.free()
+	player.position = Vector2(120, 64)
+	camera = PlayerCamera.new()
+	camera.target = player
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = int(size.x)
+	camera.limit_bottom = int(size.y)
+	room.add_child(camera)
+	var lowest := -INF
+	for i: int in 300:
+		await physics(1)
+		lowest = maxf(lowest, player.position.y - _centre().y)
+		if player.is_on_floor():
+			break
+	var bottom: Variant = camera.get("window_bottom")
+	check(player.is_on_floor() and bottom != null and lowest <= float(bottom) + 0.5,
+		"starting in the air at y 64, the feet fall no lower than the window's bottom edge, %s px below the view's centre: at most %.1f" % [bottom, lowest])
 	room.free()
 	await physics_frame
 	await physics_frame
