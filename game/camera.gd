@@ -4,7 +4,7 @@ extends Camera2D
 # position smoothing glides toward the target; limits keep the room's edges on
 # screen. The script keeps the camera window, which holds the view still while
 # the player walks inside it and scrolls when they push against its edge. It
-# keeps it rather than using Camera2D's drag margins, so a pull (below) moves
+# keeps it rather than using Camera2D's drag margins, so a pull moves
 # the view by its full amount instead of first crossing the window.
 # The view's height follows the player
 # only when they stand on a floor, and holds still while they are in the air,

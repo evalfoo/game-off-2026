@@ -7,7 +7,7 @@ extends "res://tests/lib/test.gd"
 # when the marker is moved far away: no pull outside or at the outer ring,
 # half the share midway, the full share at the inner ring and inside, from
 # both walk directions. A jump inside the inner ring keeps the view's height,
-# and a marker by the right wall doesn't take the view out of the room. Every
+# and a marker by the right wall pulls the view only to the room's edge. Every
 # physics frame checks the view stays inside the room.
 
 const HALF_VIEW := Vector2(160, 90)
@@ -74,13 +74,21 @@ func run() -> void:
 	check(floor_y - top > 15.0 and moved < 0.5,
 		"a jump inside the inner ring rises %.1f px and moves the view %.1f px in the air" % [floor_y - top, moved])
 
-	# A marker by the right wall: the pull stops at the room's edge.
+	# A marker by the right wall: with the look-ahead point left, the view
+	# stops short of the room's edge without the pull, and the pull takes it
+	# only as far as the edge.
 	var size: Vector2 = room.SIZE
-	marker.position = Vector2(size.x - 20.0, MARK.y)
+	marker.position = FAR
 	player.position.x = size.x - 60.0
+	await physics(2)
+	await _walk(KEY_LEFT, func() -> bool: return player.position.x <= size.x - 120.0)
 	await physics(180)
-	check(absf(_centre().x - (size.x - HALF_VIEW.x)) < 0.01,
-		"a marker by the right wall leaves the view at the room's edge: %.1f" % _centre().x)
+	var unpulled := _centre().x
+	marker.position = Vector2(size.x - 20.0, MARK.y)
+	await physics(180)
+	check(camera.side == -1.0 and unpulled < size.x - HALF_VIEW.x - 4.0 \
+			and absf(_centre().x - (size.x - HALF_VIEW.x)) < 0.01,
+		"a marker by the right wall pulls the view from %.1f to the room's edge, %.1f" % [unpulled, _centre().x])
 
 	check(outside == 0, "the view stays inside the room every frame: %d frames outside" % outside)
 	room.free()
