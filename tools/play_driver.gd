@@ -225,6 +225,7 @@ func _run() -> void:
 		game = current_scene
 	if options.scene.is_empty():
 		_load_hooks()
+	root.add_child(PhysicsStop.new())
 	for frame in 3:
 		await process_frame
 	print("PLAY START in ", out)
@@ -236,14 +237,14 @@ func _finish(code: int) -> void:
 		return
 	finished = true
 	_release()
-	Engine.time_scale = 1.0
+	_set_time_running(true)
 	quit(code)
 
 # One turn: stop time, write what the screen shows, wait for the agent's action
 # and apply it, then run time for its wait.
 func _turn() -> void:
 	turn += 1
-	Engine.time_scale = 0.0
+	_set_time_running(false)
 	await RenderingServer.frame_post_draw
 	if finished:
 		return
@@ -680,10 +681,38 @@ func _run_held(seconds: float) -> bool:
 # time stopped here still lets this frame run.
 func _run_time(seconds: float) -> void:
 	var end := game_time + seconds - 0.000001   # leaves out float rounding
-	Engine.time_scale = 1.0
+	_set_time_running(true)
 	while game_time < end and not finished:
 		await process_frame
-	Engine.time_scale = 0.0
+	_set_time_running(false)
+
+# Starts or stops game time, and the 2D and 3D physics servers with it. Frames
+# still run while time is stopped, and a physics step of no time can make
+# touching rigid bodies' positions NaN. Call it outside a frame's physics,
+# whose step already has its time; then it takes effect from the next frame.
+# Physics starts unless the tree is paused, which stops it too. Otherwise it
+# starts whether or not the game had stopped it: Godot can't tell.
+static func _set_time_running(running: bool) -> void:
+	Engine.time_scale = 1.0 if running else 0.0
+	PhysicsStop.time_stopped = not running
+	var on := running and not (Engine.get_main_loop() as SceneTree).paused
+	PhysicsServer2D.set_active(on)
+	PhysicsServer3D.set_active(on)
+
+# Unpausing the tree turns physics on at once, even while the driver has time
+# stopped, such as when the game's Resume key runs during a turn. This node,
+# which the tree pauses whatever the game sets on the root, turns it off again
+# before any step.
+class PhysicsStop extends Node:
+	static var time_stopped := false
+
+	func _init() -> void:
+		process_mode = PROCESS_MODE_PAUSABLE
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_UNPAUSED and time_stopped:
+			PhysicsServer2D.set_active(false)
+			PhysicsServer3D.set_active(false)
 
 # The text of the tooltip popup on screen, or "".
 func _tooltip(node: Node) -> String:

@@ -25,6 +25,7 @@ FILES=(
   tests/run.sh
   tests/lib
   tests/play_events.gd tests/play_events.gd.uid
+  tests/play_physics.gd tests/play_physics.gd.uid
   tests/replay_native.gd tests/replay_native.gd.uid
 )
 

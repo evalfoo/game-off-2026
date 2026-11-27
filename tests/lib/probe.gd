@@ -2,6 +2,8 @@ extends Button
 
 # The game MCP self-test's scene, so the test passes whatever the game does.
 # The whole window is one button, so a click lands whatever the window size.
+# It clips its text, so a view narrower than the text doesn't widen it past
+# the window's edges.
 # A press shows the count in the button's tooltip, which the driver's hover
 # reports for any scene. Reading current_scene in _ready() fails, as a SCRIPT
 # ERROR on turn 1, when the driver sets it too late, as for a prototype.
