@@ -12,26 +12,26 @@
   },
   "ui": [
     {
-      "node": "Main/BoxA/@Label@4",
+      "node": "Main/View/World/BoxA/@Label@4",
       "class": "Label",
       "text": "BOX A\nmass 2",
       "rect": [
-        640,
-        464,
-        108,
-        108
+        161,
+        117,
+        27,
+        27
       ],
       "disabled": false
     },
     {
-      "node": "Main/BoxB/@Label@7",
+      "node": "Main/View/World/BoxB/@Label@7",
       "class": "Label",
       "text": "BOX B\nmass 8",
       "rect": [
-        896,
-        400,
-        108,
-        108
+        225,
+        101,
+        27,
+        27
       ],
       "disabled": false
     },
