@@ -1,15 +1,19 @@
 extends Camera2D
 
-# Follows the player in a room wider than the view. Camera2D does most of it:
-# its drag margins are the camera window, which holds the view still while the
-# player walks inside it and scrolls when they push against its edge; position
-# smoothing glides toward the target; limits keep the room's edges on screen.
-# This script adds the one rule Camera2D lacks: the height follows the player
+# Follows the player in a room wider than the view. Camera2D does part of it:
+# position smoothing glides toward the target; limits keep the room's edges on
+# screen. The script keeps the camera window, which holds the view still while
+# the player walks inside it and scrolls when they push against its edge. It
+# keeps it rather than using Camera2D's drag margins, so a pull (below) moves
+# the view by its full amount instead of first crossing the window.
+# The view's height follows the player
 # only when they stand on a floor, and holds still while they are in the air,
-# so a jump doesn't move the view. It also follows a look-ahead point in front
+# so a jump doesn't move the view. The window follows a look-ahead point in front
 # of the player instead of the player, so the view shows more ahead than behind.
 # The point changes sides only once the player has walked flip_distance back
 # from the furthest point they reached, so a short turn doesn't swing the view.
+# Objects the room marks with pull_toward draw the view partway toward them
+# while the player is near.
 #
 # The room sets target and the limits before adding it, after the player, so
 # each physics step it follows where the player has just moved.
@@ -39,13 +43,21 @@ var target: Player
 var side := 1.0
 # The furthest x the player has reached toward side.
 var _furthest := 0.0
+# The camera window's centre x. It follows the look-ahead point only when that
+# point reaches the window's edge.
+var _window_x := 0.0
+var _pulls: Array[Pull] = []
+
+
+class Pull:
+	var node: Node2D
+	var inner_radius: float
+	var outer_radius: float
+	var share: float
 
 
 func _ready() -> void:
 	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
-	drag_horizontal_enabled = true
-	drag_left_margin = window_margin
-	drag_right_margin = window_margin
 	position_smoothing_enabled = true
 	position_smoothing_speed = smoothing_speed
 	# Camera2D updates the view in its own physics step, which runs before this
@@ -53,7 +65,8 @@ func _ready() -> void:
 	# _physics_process updates it instead, once, after setting the target.
 	set_physics_process_internal(false)
 	_furthest = target.position.x
-	position = Vector2(_look_ahead_x(), target.position.y - feet_below_centre)
+	_window_x = _look_ahead_x()
+	position = _pulled(Vector2(_window_x, target.position.y - feet_below_centre))
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
 	# the view would sit at the room's top-left corner.
@@ -63,9 +76,13 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	position.x = _look_ahead_x()
+	var half_window := window_margin * get_viewport_rect().size.x * 0.5
+	var ahead := _look_ahead_x()
+	_window_x = clampf(_window_x, ahead - half_window, ahead + half_window)
+	var pulled := _pulled(Vector2(_window_x, target.position.y - feet_below_centre))
+	position.x = pulled.x
 	if target.is_on_floor():
-		position.y = target.position.y - feet_below_centre
+		position.y = pulled.y
 	else:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.
@@ -81,3 +98,33 @@ func _look_ahead_x() -> float:
 		side = -side
 		_furthest = x
 	return x + side * lerpf(small_look_ahead, big_look_ahead, target.t)
+
+
+# Marks node as pulling the view toward it. While the player's feet are
+# outer_radius or more from it, it doesn't pull; at inner_radius or closer, the
+# view's target moves share of the way from where it would be to the node;
+# between the two the pull blends in with the distance. inner_radius must be
+# less than outer_radius. Where pulls overlap, the strongest one counts.
+func pull_toward(node: Node2D, inner_radius: float, outer_radius: float, share: float) -> void:
+	var pull := Pull.new()
+	pull.node = node
+	pull.inner_radius = inner_radius
+	pull.outer_radius = outer_radius
+	pull.share = share
+	_pulls.append(pull)
+
+
+# Moves point toward the strongest pull at the player's distance from it.
+func _pulled(point: Vector2) -> Vector2:
+	var toward := point
+	var amount := 0.0
+	for pull: Pull in _pulls:
+		if not is_instance_valid(pull.node):
+			continue
+		var at := (get_parent() as Node2D).to_local(pull.node.global_position)
+		var blend := inverse_lerp(pull.outer_radius, pull.inner_radius, target.position.distance_to(at))
+		var strength := pull.share * clampf(blend, 0.0, 1.0)
+		if strength > amount:
+			amount = strength
+			toward = at
+	return point.lerp(toward, amount)
