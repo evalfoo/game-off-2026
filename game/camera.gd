@@ -78,10 +78,11 @@ func _ready() -> void:
 
 
 # Shakes the view up to `strength` px from where it would be, fading to none
-# over `length` seconds. A new shake replaces the current one.
+# over `length` seconds. A new shake replaces the current one; a length of 0
+# stops it.
 func shake(strength: float, length: float) -> void:
 	_shake_strength = strength
-	_shake_length = length
+	_shake_length = maxf(length, 0.0)
 	_shake_time = 0.0
 
 
@@ -93,8 +94,11 @@ func _physics_process(delta: float) -> void:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.
 		position.y = get_screen_center_position().y - offset.y
-	_shake_step(delta)
 	force_update_scroll()
+	# Zero-length steps, while the play driver stops time, leave the shake and
+	# the seed's sequence alone.
+	if delta > 0.0 and (_shake_length > 0.0 or offset != Vector2.ZERO):
+		_shake_step(delta)
 
 
 # The height `y` moved by Up or Down, but not past the room's edge, where the
@@ -106,19 +110,35 @@ func _look(y: float) -> float:
 	return clampf(looked, minf(y, limit_top + half), maxf(y, limit_bottom - half))
 
 
-# Moves the shake one step on. Zero-length steps, while the play driver stops
-# time, leave it and the seed's sequence alone.
+# Moves the shake one step on, from where the view sits without it. Each step
+# shows the shake at the time it starts, so even a one-step shake moves the
+# view, and it ends on the first step at or past its length.
 func _shake_step(delta: float) -> void:
-	if _shake_length <= 0.0 or delta <= 0.0:
-		return
-	_shake_time += delta
+	var shaken := Vector2.ZERO
 	# Summed frame times can fall a hair short of the length they add up to.
-	if _shake_time >= _shake_length - 0.0001:
+	if _shake_time < _shake_length - 0.0001:
+		var fade := 1.0 - _shake_time / _shake_length
+		shaken = Vector2.from_angle(_rng.randf() * TAU) * _shake_strength * fade
+		_shake_time += delta
+	else:
 		_shake_length = 0.0
-		offset = Vector2.ZERO
-		return
-	var fade := 1.0 - _shake_time / _shake_length
-	offset = Vector2.from_angle(_rng.randf() * TAU) * _shake_strength * fade
+	# Camera2D adds offset after its limits, so the shake is kept inside them
+	# here: each axis gives up what would pass the room's edge.
+	var base := get_screen_center_position() - offset
+	var half := get_viewport_rect().size / 2.0 / zoom
+	var low := Vector2(limit_left, limit_top) + half
+	var high := Vector2(limit_right, limit_bottom) - half
+	var centre := (base + shaken).clamp(low.min(base), high.max(base))
+	# Shows the new offset without a second smoothing step: Camera2D's update
+	# eases position_smoothing_speed × delta of the way on each call. Setting
+	# the speed turns Camera2D's own physics update back on, which _ready()
+	# turned off.
+	var speed := position_smoothing_speed
+	position_smoothing_speed = 0.0
+	offset = centre - base
+	force_update_scroll()
+	position_smoothing_speed = speed
+	set_physics_process_internal(false)
 
 
 func _look_ahead_x() -> float:
