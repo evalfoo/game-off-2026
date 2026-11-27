@@ -20,7 +20,8 @@ func run() -> void:
 	Events.hold_key(KEY_SHIFT, false)
 	finish()
 
+# Holds Space through the rise, for a full jump.
 func _jump() -> void:
 	Events.hold_key(KEY_SPACE, true)
-	await hold(0.1)
+	await hold(0.6)
 	Events.hold_key(KEY_SPACE, false)

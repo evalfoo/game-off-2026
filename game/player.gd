@@ -15,10 +15,21 @@ extends CharacterBody2D
 @export var small_speed := 300.0
 @export var big_speed := 100.0
 @export var transition_time := 0.4
-@export var accel := 12.0
+# Seconds to reach full speed from standing, and to stop or turn from full
+# speed.
+@export var accel_time := 0.1
+@export var decel_time := 0.05
 @export var small_jump_speed := 500.0
 # Half the small jump's height: the height goes with the speed squared.
 @export var big_jump_speed := 354.0
+# Falling pulls harder than rising, and rising with jump let go harder still,
+# so a short press makes a short jump.
+@export var fall_gravity_scale := 2.0
+@export var jump_cut_gravity_scale := 3.0
+# A jump still works this long after walking off an edge, and a press this
+# long before landing jumps on landing. Seconds.
+@export var coyote_time := 0.1
+@export var jump_buffer_time := 0.1
 # The player pushes boxes up to this many times its mass: small moves BOX A
 # (mass 2), big moves BOX B (mass 8).
 @export var push_ratio := 3.0
@@ -30,6 +41,8 @@ var jump_speed := small_jump_speed
 var shape := RectangleShape2D.new()
 var collision := CollisionShape2D.new()
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
+var _coyote := 0.0
+var _jump_buffer := 0.0
 
 
 func _ready() -> void:
@@ -40,6 +53,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# A jump pressed during a pause still counts once time runs.
+	if Input.is_action_just_pressed("ui_accept"):
+		_jump_buffer = jump_buffer_time
 	# The play driver's pause runs zero-length frames.
 	if delta <= 0.0:
 		return
@@ -48,10 +64,24 @@ func _physics_process(delta: float) -> void:
 	_apply_size()
 
 	var dir := Input.get_axis("ui_left", "ui_right")
-	velocity.x = lerpf(velocity.x, dir * speed, clampf(accel * delta, 0.0, 1.0))
-	velocity.y += gravity * delta
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+	var stopping := dir == 0.0 or dir * velocity.x < 0.0
+	var rate := speed / (decel_time if stopping else accel_time)
+	velocity.x = move_toward(velocity.x, dir * speed, rate * delta)
+
+	var jump_held := Input.is_action_pressed("ui_accept")
+	var gravity_scale := 1.0
+	if velocity.y > 0.0:
+		gravity_scale = fall_gravity_scale
+	elif not jump_held:
+		gravity_scale = jump_cut_gravity_scale
+	velocity.y += gravity * gravity_scale * delta
+
+	_coyote = coyote_time if is_on_floor() else _coyote - delta
+	if _jump_buffer > 0.0 and _coyote > 0.0:
 		velocity.y = -jump_speed
+		_coyote = 0.0
+		_jump_buffer = 0.0
+	_jump_buffer -= delta
 	_push_ahead(velocity.x * delta)
 	move_and_slide()
 	_carry()
