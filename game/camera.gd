@@ -19,6 +19,7 @@ extends Camera2D
 
 const Player := preload("res://game/player.gd")
 const Plank := preload("res://game/seesaw_plank.gd")
+const FALL_TOLERANCE := 0.01
 
 # Half the camera window's width, as a share of half the view's width: 0.2 is
 # 32 px either side of the centre.
@@ -54,7 +55,8 @@ func _ready() -> void:
 	drag_horizontal_enabled = true
 	drag_left_margin = window_margin
 	drag_right_margin = window_margin
-	position_smoothing_enabled = true
+	# A speed of 0 turns smoothing off; Camera2D would otherwise never move.
+	position_smoothing_enabled = smoothing_speed > 0.0
 	position_smoothing_speed = smoothing_speed
 	# Camera2D updates the view in its own physics step, which runs before this
 	# script's, so the view would always trail the target set here by a step.
@@ -73,10 +75,12 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	position.x = _look_ahead_x()
 	var centre_y := get_screen_center_position().y
-	var share := position_smoothing_speed * delta
+	var share := position_smoothing_speed * delta if position_smoothing_enabled else 1.0
 	# Checked before the floor, as the step a fall lands can drop the feet
 	# well past the line, and easing toward the standing height would trail.
-	if target.position.y > centre_y + window_bottom and share > 0.0:
+	# The view's position can come back a hair off the line after a fall, and
+	# FALL_TOLERANCE keeps that from counting as falling on.
+	if target.position.y > centre_y + window_bottom + FALL_TOLERANCE and share > 0.0:
 		# Smoothing moves the view `share` of the way to its target each
 		# step, so aiming that much further puts the window's bottom edge on the
 		# feet this step instead of trailing a fast fall.

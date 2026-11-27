@@ -8,11 +8,13 @@ extends "res://tests/lib/test.gd"
 # room's floor, and off one 640 px above it with the camera's top limit open.
 # Every physics frame of the fall, the landing's included, the whole player
 # stays inside the view and the feet no lower than the camera window's bottom
-# edge, and after landing the view settles on the floor's height.
+# edge, and after landing the view settles on the floor's height. The 640 px
+# fall runs once more with the window's bottom edge at a fractional 79.6 px.
 #
 # A start in the air: the room's camera is swapped for one added while the
 # player is in the air near the room's top. Falling to the floor keeps the
-# feet on or above the window's bottom edge.
+# feet on or above the window's bottom edge, also with smoothing off
+# (smoothing_speed 0).
 #
 # The plank: in the seesaw room, the player stands on the plank's raised end,
 # grows to push it down and shrinks to let it rise again. The feet move with
@@ -36,11 +38,13 @@ func run() -> void:
 	await _check_fall(true, LEDGE_ROW)
 	await _check_fall(false, HIGH_LEDGE_ROW)
 	await _check_fall(true, HIGH_LEDGE_ROW)
-	await _check_start_in_air()
+	await _check_fall(false, HIGH_LEDGE_ROW, 79.6)
+	await _check_start_in_air(5.0)
+	await _check_start_in_air(0.0)
 	await _check_plank()
 
 
-func _check_fall(big: bool, ledge_row: int) -> void:
+func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
 	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	root.add_child(room)
 	Tiles.platform(room.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
@@ -48,7 +52,8 @@ func _check_fall(big: bool, ledge_row: int) -> void:
 	camera = room.camera
 	var floor_y: float = room.FLOOR_Y
 	var ledge_y := float(ledge_row * Tiles.TILE)
-	var label := "%s, %d px drop" % ["big" if big else "small", floor_y - ledge_y]
+	var label := "%s, %d px drop, window bottom %.1f" % ["big" if big else "small", floor_y - ledge_y, bottom_edge]
+	camera.set("window_bottom", bottom_edge)
 	# Above the room: the top limit opens so the view can show the ledge.
 	if ledge_y < 0.0:
 		camera.limit_top = -10000000
@@ -95,7 +100,7 @@ func _check_fall(big: bool, ledge_row: int) -> void:
 	await physics_frame
 
 
-func _check_start_in_air() -> void:
+func _check_start_in_air(smoothing: float) -> void:
 	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	root.add_child(room)
 	var player: CharacterBody2D = room.player
@@ -108,6 +113,7 @@ func _check_start_in_air() -> void:
 	camera.limit_top = 0
 	camera.limit_right = int(size.x)
 	camera.limit_bottom = int(size.y)
+	camera.smoothing_speed = smoothing
 	room.add_child(camera)
 	var lowest := -INF
 	for i: int in 300:
@@ -117,7 +123,7 @@ func _check_start_in_air() -> void:
 			break
 	var bottom: Variant = camera.get("window_bottom")
 	check(player.is_on_floor() and bottom != null and lowest <= float(bottom) + 0.5,
-		"starting in the air at y 64, the feet fall no lower than the window's bottom edge, %s px below the view's centre: at most %.1f" % [bottom, lowest])
+		"smoothing speed %.0f: starting in the air at y 64, the feet fall no lower than the window's bottom edge, %s px below the view's centre: at most %.1f" % [smoothing, bottom, lowest])
 	room.free()
 	await physics_frame
 	await physics_frame
