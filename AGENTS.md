@@ -2,6 +2,10 @@
 
 A Game Off 2026 jam entry (theme: SHIFT) in Godot 4 and GDScript: holding Shift makes the player bigger, heavier and slower. It is a grey-box with no art sources yet.
 
+## Ideas and design
+
+The game's ideas, art and text are the owner's. Contribute game ideas, mechanics, twists, titles or verdicts on fun only when the owner asks; from play, report what happens. [The design notes](docs/design.md) hold the owner's decisions in their wording: record new ones there as given.
+
 ## Before editing
 
 - For simulation, UI or persistence changes, read the relevant code-map and convention sections in [implementation notes](docs/implementation.md). Engine and implementation decisions go there too.
