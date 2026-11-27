@@ -18,7 +18,10 @@ extends "res://tests/lib/test.gd"
 #
 # The plank: in the seesaw room, the player stands on the plank's raised end,
 # grows to push it down and shrinks to let it rise again. The feet move with
-# the plank while the view's height holds.
+# the plank while the view's height holds. Then, as in tests/seesaw_jump.gd,
+# the player looks up, jumps onto the raised end, lets go of Up in the air
+# and grows on the plank: the look ends there, so the feet stay above the
+# window's bottom edge as the plank drops.
 
 const PlayerCamera := preload("res://game/camera.gd")
 const Tiles := preload("res://game/tiles.gd")
@@ -42,6 +45,7 @@ func run() -> void:
 	await _check_start_in_air(5.0)
 	await _check_start_in_air(0.0)
 	await _check_plank()
+	await _check_look_then_plank()
 
 
 func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
@@ -169,6 +173,46 @@ func _check_plank() -> void:
 		"shrinking lets the plank lift the player %.1f px" % (lowered_y - player.position.y))
 	check(view[1] - view[0] < 0.5 and absf(view[0] - floor_view_y) < 0.5,
 		"on the tilting plank the feet move %.1f px and the view's height %.1f px, from %.1f on the floor" % [feet[1] - feet[0], view[1] - view[0], floor_view_y])
+	room.free()
+	await physics_frame
+
+
+func _check_look_then_plank() -> void:
+	var room: Node2D = (load("res://game/rooms/seesaw.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	var player: CharacterBody2D = room.player
+	var plank: AnimatableBody2D = room.plank
+	camera = PlayerCamera.new()
+	camera.target = player
+	camera.limit_left = 0
+	camera.limit_right = 320
+	camera.limit_bottom = 180
+	room.view.world.add_child(camera)
+	Events.hold_key(KEY_UP, true)
+	await physics(120)
+	Events.hold_key(KEY_RIGHT, true)
+	await physics(24)
+	Events.hold_key(KEY_SPACE, true)
+	await physics(2)
+	Events.hold_key(KEY_UP, false)
+	await physics(34)
+	Events.hold_key(KEY_SPACE, false)
+	Events.hold_key(KEY_RIGHT, false)
+	await physics(30)
+	check(player.is_on_floor() and player.position.x < room.PIVOT.x and plank.rotation > 0.1,
+		"staged: looking up, the player jumps onto the raised left end: %s, rotation %.2f" % [player.position, plank.rotation])
+	var lowest := -INF
+	var off_screen := 0
+	Events.hold_key(KEY_SHIFT, true)
+	for i: int in 90:
+		await physics(1)
+		var feet := player.position.y - _centre().y
+		lowest = maxf(lowest, feet)
+		if feet > HALF_VIEW.y or feet - player.shape.size.y < -HALF_VIEW.y:
+			off_screen += 1
+	Events.hold_key(KEY_SHIFT, false)
+	check(plank.rotation < -0.1 and off_screen == 0 and lowest <= camera.window_bottom + 0.5,
+		"after a look up, growing on the plank keeps the player on screen: %d frames off, feet at most %.2f px below the view's centre" % [off_screen, lowest])
 	room.free()
 	await physics_frame
 

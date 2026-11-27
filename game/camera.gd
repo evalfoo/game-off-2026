@@ -110,8 +110,13 @@ func _physics_process(delta: float) -> void:
 	# Where the view sits without the shake, which doesn't move where it goes.
 	var centre_y := get_screen_center_position().y - offset.y
 	var share := position_smoothing_speed * delta if position_smoothing_enabled else 1.0
-	var standing := target.is_on_floor() and not _on_plank()
+	var on_plank := target.is_on_floor() and _on_plank()
+	var standing := target.is_on_floor() and not on_plank
 	var floor_y := _inside_limits(target.position.y - feet_below_centre)
+	# The plank is not the floor the look was made on, and it can drop below
+	# where the player landed, so landing on it ends the look's room.
+	if on_plank:
+		_lift = 0.0
 	# Looking up on a floor puts the feet below the view's centre by that much
 	# more on purpose, and a jump holds the view there. Any drop below the
 	# standing height is a fall, not looking, so it gets no such room. Both come
