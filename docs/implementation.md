@@ -17,12 +17,14 @@ The player's collision shape is a rectangle. A capsule would round off catches o
 Keep the game's simulation apart from presentation, so headless tests can drive the rules without a window.
 
 - `game/main.gd`: builds the level (tiles, `BOX A`, `BOX B`), the player and the readout in code.
-- `game/tiles.gd`: builds a room's floor and side walls as a `TileMapLayer` from `art/tiles.tres`.
+- `game/tiles.gd`: builds a room's floor and side walls as a `TileMapLayer` from `art/tiles.tres`, one view in size unless the room gives its own, and one-tile-thick platforms.
 - `game/player.gd`: the player, a `CharacterBody2D`. Holding Shift eases size, mass, speed and jump speed from the small values to the big ones; its origin sits at the feet, so it grows upward. It pushes boxes up to `push_ratio` times its mass, moving the box before itself in the same step, and weighs down the plank it stands on. Its controls have separate start and stop times, stronger gravity when falling or when jump is let go early, coyote time and a jump buffer.
 - `game/box.gd`: a box, a `CharacterBody2D` that falls and moves only when pushed. It puts its x back after its own `move_and_slide()`: on the tile floor, sliding pressed against the other box crept both about 1 px/s.
 - `game/seesaw_plank.gd`: a seesaw plank, an `AnimatableBody2D` that turns toward the side with the larger mass × distance from the pivot, counting its fixed counterweight and what stands on it.
+- `game/camera.gd`: a `Camera2D` that follows the player. Camera2D's own drag margins are the horizontal camera window, with its position smoothing and limits; the script adds that the height follows the player only on a floor. It updates in the physics step, where the bodies move. The room sets its target and limits, and adds it after the player.
 - `game/play_hooks.gd`: the readout text for the play driver.
 - `game/rooms/seesaw.tscn`: a grey-box room for the seesaw puzzle, separate from the main scene. Open it with `mise exec -- godot --path . res://game/rooms/seesaw.tscn`, or the game MCP server's `scene`.
+- `game/rooms/wide.tscn`: a grey-box room three views wide and taller than one, with a one-tile step, for the camera. Its readout sits on a `CanvasLayer`, so it stays put while the view scrolls.
 
 ## Persistence
 
