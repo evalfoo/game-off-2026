@@ -8,6 +8,7 @@ extends Node2D
 const Player := preload("res://game/player.gd")
 const Tiles := preload("res://game/tiles.gd")
 const PlayerCamera := preload("res://game/camera.gd")
+const PixelView := preload("res://game/pixel_view.gd")
 
 const COLUMNS := 60
 const ROWS := 18
@@ -22,18 +23,21 @@ const FONT_SIZE := 8
 
 var player: Player
 var camera: PlayerCamera
+var view := PixelView.new()
 var readout := Label.new()
 
 
 func _ready() -> void:
+	view.name = "View"
+	add_child(view)
 	var tiles := Tiles.room(FLOOR_Y, COLUMNS, ROWS)
 	Tiles.platform(tiles, STEP_ROW, STEP_FIRST, STEP_LAST)
-	add_child(tiles)
+	view.world.add_child(tiles)
 
 	player = Player.new()
 	player.name = "Player"
 	player.position = Vector2(120, FLOOR_Y)
-	add_child(player)
+	view.world.add_child(player)
 
 	camera = PlayerCamera.new()
 	camera.name = "Camera"
@@ -42,7 +46,7 @@ func _ready() -> void:
 	camera.limit_top = 0
 	camera.limit_right = int(SIZE.x)
 	camera.limit_bottom = int(SIZE.y)
-	add_child(camera)
+	view.world.add_child(camera)
 
 	# On its own canvas layer, so it stays put while the view scrolls.
 	var hud := CanvasLayer.new()

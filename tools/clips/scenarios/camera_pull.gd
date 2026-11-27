@@ -20,7 +20,10 @@ func run() -> void:
 	var spot := Node2D.new()
 	spot.position = Vector2(330, 160)
 	spot.add_child(marker)
-	game.add_child(spot)
+	# The pixel view's rooms keep their world in game.view.world; the old base
+	# keeps it in the room.
+	var world: Node = game.view.world if "view" in game else game
+	world.add_child(spot)
 	var camera: Camera2D = game.get("camera")
 	if camera.has_method("pull_toward"):
 		camera.call("pull_toward", spot, 112.0, 192.0, 0.5)

@@ -28,6 +28,8 @@ var camera: Camera2D
 var marker := Node2D.new()
 # Frames whose view showed something outside the room.
 var outside := 0
+# Where the room's contents sit in the world.
+var shift := Vector2.ZERO
 
 
 func run() -> void:
@@ -36,7 +38,7 @@ func run() -> void:
 	player = room.player
 	camera = room.camera
 	marker.position = MARK
-	room.add_child(marker)
+	room.view.world.add_child(marker)
 	camera.call("pull_toward", marker, INNER, OUTER, SHARE)
 	await physics(1)
 	var floor_y: float = room.FLOOR_Y
@@ -108,6 +110,7 @@ func run() -> void:
 	room.free()
 	await physics_frame
 	await _check_moved_room()
+	shift = Vector2.ZERO
 	await physics_frame
 	await _check_zoom()
 
@@ -118,14 +121,22 @@ func run() -> void:
 func _check_moved_room() -> void:
 	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
 	var size: Vector2 = room.SIZE
-	room.position = Vector2(size.x, 0)
 	root.add_child(room)
+	# The room's world sits in a SubViewport, so moving the room doesn't move
+	# it. A node one room's width right of the origin holds it instead.
+	var moved := Node2D.new()
+	moved.position = Vector2(size.x, 0)
+	shift = moved.position
+	room.view.world.add_child(moved)
+	for node: Node in room.view.world.get_children():
+		if node != moved:
+			node.reparent(moved, false)
 	player = room.player
 	camera = room.camera
 	camera.limit_left = int(size.x)
 	camera.limit_right = int(2.0 * size.x)
 	marker = Node2D.new()
-	room.add_child(marker)
+	moved.add_child(marker)
 	camera.call("pull_toward", marker, INNER, OUTER, SHARE)
 	outside = 0
 	var at := Vector2(540, 186)
@@ -138,7 +149,7 @@ func _check_moved_room() -> void:
 	await physics(180)
 	var distance := player.position.distance_to(at)
 	var weight := clampf((OUTER - distance) / (OUTER - INNER), 0.0, 1.0)
-	var expected := unpulled.lerp(room.to_global(at), SHARE * weight)
+	var expected := unpulled.lerp(moved.to_global(at), SHARE * weight)
 	check(start < 600.0 and _centre().distance_to(expected) < 0.5,
 		"in a room at world x %d, a marker left of the player, %.1f px from their feet, pulls the view %.2f of the way, (%.1f, %.1f) -> (%.1f, %.1f), expected (%.1f, %.1f)" % [
 			size.x, distance, SHARE * weight, unpulled.x, unpulled.y, _centre().x, _centre().y, expected.x, expected.y])
@@ -158,12 +169,12 @@ func _check_zoom() -> void:
 	camera.zoom = Vector2(2, 2)
 	marker = Node2D.new()
 	marker.position = FAR
-	room.add_child(marker)
+	room.view.world.add_child(marker)
 	camera.call("pull_toward", marker, INNER, OUTER, SHARE)
 	outside = 0
 	var size: Vector2 = room.SIZE
 	var ahead: float = camera.small_look_ahead
-	var half_window: float = camera.window_margin * HALF_VIEW.x / 2.0
+	var half_window: float = camera.small_window_margin * HALF_VIEW.x / 2.0
 	player.position.x = 540.0
 	await physics(2)
 	await _walk(KEY_RIGHT, func() -> bool: return player.position.x >= 600.0)
@@ -222,7 +233,7 @@ func _walk(key: Key, done: Callable) -> void:
 func physics(count: int) -> void:
 	for i: int in count:
 		await physics_frame
-		var c := _centre() - room.position
+		var c := _centre() - shift
 		var room_size: Vector2 = room.SIZE
 		var half := HALF_VIEW / camera.zoom
 		if c.x < half.x - 0.01 or c.x > room_size.x - half.x + 0.01 \
