@@ -15,7 +15,7 @@ func run() -> void:
 	var camera: Camera2D = game.get("camera")
 	start_clip()
 	await hold(0.3)
-	strip(4, "a 4 px shake standing, then a 6 px shake walking and jumping")
+	strip(9, "a 4 px shake standing, then a 6 px shake walking and jumping")
 	mark("shake 4 px for 0.5 s")
 	camera.call("shake", 4.0, 0.5)
 	await hold(1.0)
