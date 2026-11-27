@@ -35,6 +35,15 @@ Every save goes under `save_directory` in `game/main.gd`, `user://` by default. 
 - The view is 320×180 game pixels, drawn at the largest whole multiple that fits the window (`stretch/mode="viewport"`, `scale_mode="integer"`), with nearest filtering and transforms snapped to whole pixels. The window opens at 1280×720.
 - Positions and sizes are in game pixels; tiles are 16 px. Moving to this scale divided the earlier lengths, speeds and gravity by 3, so jumps keep their shape.
 - Art lives in `art/`: PNGs with their `.import` files, and the tile set `art/tiles.tres`, whose one tile has a full-square collision polygon. The PNGs there are flat placeholders. The player's sprite is drawn at the small size and stretched as it grows; box collision takes its size from the box's sprite.
+- `art/tiles.png` is a sheet of 8×4 tiles of 16 px; draw over it in place and `art/tiles.tres` keeps each tile's collision. In the placeholder, a light line marks a side that faces open air. By column and row:
+  - 0–2, 0–2: a 3×3 block: corners, edges and, at 1,1, the fill. Rooms use 1,0 for the floor's surface and 1,1 below it.
+  - 3–4, 0–1: inner corners, a full tile with one open corner: top-left, top-right, bottom-left, bottom-right.
+  - 5, 0–2: a one-tile-wide pillar: top, middle, bottom.
+  - 0–3, 3: a one-tile-thick platform: left, middle, right, and a single block.
+  - 6–7, 0: 45° slopes rising right and rising left.
+  - 6–7, 1: a 22.5° slope rising right over two tiles, low then high. 6–7, 2: rising left, high then low.
+  - 6–7, 3: 45° ceiling slopes, solid at the top-left and at the top-right.
+  - 3–4, 2 and 4–5, 3 are empty.
 
 ## Testing
 
