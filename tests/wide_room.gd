@@ -4,24 +4,27 @@ extends "res://tests/lib/test.gd"
 # painted tiles end up in the pixel view's world at View/World/Tiles, the
 # player starts at PlayerStart and stands on the floor, and the camera's limits
 # are the tiles' bounds less the wall column on each side, which match the
-# room's SIZE. Staged: an edit to the scene before it starts, the marker moved
-# and a wall painted further right, shows up as a new start and right limit.
+# room's SIZE. Staged: edits to the scene before it starts show up in the
+# game. A moved marker and a wall painted further right give a new start and
+# right limit, and the layer and marker moved together move the limits too.
 
 const Tiles := preload("res://game/tiles.gd")
 
 
 func run() -> void:
 	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	var marked := (room.get_node("PlayerStart") as Marker2D).position
 	root.add_child(room)
-	await physics(10)
 	var player: CharacterBody2D = room.player
+	check(player.position == marked, "the player starts at PlayerStart: %s" % player.position)
+	await physics(10)
 	var camera: Camera2D = room.camera
 	var size: Vector2 = room.SIZE
 	var tiles := room.get_node_or_null("View/World/Tiles") as TileMapLayer
 	check(tiles != null and room.get_node_or_null("Tiles") == null,
 		"the painted tiles move into the pixel view's world, at View/World/Tiles")
-	check(player.is_on_floor() and player.position == Vector2(120, room.FLOOR_Y),
-		"the player starts at PlayerStart, standing on the floor: %s" % player.position)
+	check(player.is_on_floor() and absf(player.position.y - room.FLOOR_Y) < 0.01,
+		"the player stands on the floor at FLOOR_Y: %s" % player.position)
 	var limits := Rect2i(camera.limit_left, camera.limit_top,
 			camera.limit_right - camera.limit_left, camera.limit_bottom - camera.limit_top)
 	check(limits == Rect2i(Vector2i.ZERO, Vector2i(size)),
@@ -48,6 +51,24 @@ func run() -> void:
 	check(player.position == start, "a moved PlayerStart moves where the player starts: %s" % player.position)
 	check(camera.limit_right == int(size.x) + 4 * Tiles.TILE and camera.limit_left == 0,
 		"a wall painted four columns further right moves the right limit with it: %d" % camera.limit_right)
+	room.free()
+	await physics(2)
+
+	# Staged: the layer and the marker moved together, by (64, 16).
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	var shift := Vector2(64, 16)
+	(room.get_node("Tiles") as Node2D).position += shift
+	(room.get_node("PlayerStart") as Node2D).position += shift
+	root.add_child(room)
+	player = room.player
+	camera = room.camera
+	var limits_moved := Rect2i(camera.limit_left, camera.limit_top,
+			camera.limit_right - camera.limit_left, camera.limit_bottom - camera.limit_top)
+	check(limits_moved == Rect2i(Vector2i(shift), Vector2i(size)),
+		"moving the layer moves the camera's limits with it: %s" % limits_moved)
+	await physics(10)
+	check(player.is_on_floor() and absf(player.position.y - (room.FLOOR_Y + shift.y)) < 0.01,
+		"the player starts on the moved floor: %s" % player.position)
 	room.free()
 
 
