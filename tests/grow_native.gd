@@ -6,7 +6,7 @@ extends "res://tests/lib/test.gd"
 func run() -> void:
 	var game := Fixture.launch(root)
 	await physics(10)
-	var player: RigidBody2D = game.player
+	var player: CharacterBody2D = game.player
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(40)
 	check(player.shape.size == player.big_size, "holding Shift grows the player: %s" % player.shape.size)

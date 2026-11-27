@@ -6,7 +6,7 @@ extends "res://tests/lib/test.gd"
 func run() -> void:
 	var game := Fixture.launch(root)
 	await physics(10)
-	var player: RigidBody2D = game.player
+	var player: CharacterBody2D = game.player
 	var floor_y: float = game.FLOOR_Y
 	check(_is(player, "small"), "a new game starts small, light and fast")
 
@@ -19,7 +19,7 @@ func run() -> void:
 	await physics(40)
 	check(_is(player, "small"), "letting go makes it small, light and fast again")
 
-func _is(player: RigidBody2D, state: String) -> bool:
+func _is(player: CharacterBody2D, state: String) -> bool:
 	return player.shape.size == player.get(state + "_size") \
 		and is_equal_approx(player.mass, player.get(state + "_mass")) \
 		and is_equal_approx(player.speed, player.get(state + "_speed"))

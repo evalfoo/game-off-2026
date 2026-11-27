@@ -5,6 +5,7 @@ extends Node2D
 # scene through tests/lib/fixture.gd.
 
 const Player := preload("res://game/player.gd")
+const Box := preload("res://game/box.gd")
 
 # The floor's top edge. The player starts standing on it.
 const FLOOR_Y := 840.0
@@ -48,14 +49,6 @@ func _process(_delta: float) -> void:
 	_refresh_readout()
 
 
-# The play driver stops time with Engine.time_scale = 0, but physics still
-# steps with a zero delta, which turns moving rigid bodies that touch something
-# into NaN. Skip those steps. Physics steps after this callback, so it applies
-# in the same frame. evalfoo/godot-template#44 tracks a fix in the driver.
-func _physics_process(delta: float) -> void:
-	PhysicsServer2D.set_active(delta > 0.0)
-
-
 func _refresh_readout() -> void:
 	var size := player.shape.size
 	readout.text = "Arrows: move   Space: jump   Shift: hold\nsize: %d x %d\nmass: %.1f\nspeed: %d" % [
@@ -72,7 +65,7 @@ func _add_static(node_name: String, pos: Vector2, size: Vector2) -> void:
 
 
 func _add_box(node_name: String, label_text: String, pos: Vector2, size: Vector2, box_mass: float) -> void:
-	var body := RigidBody2D.new()
+	var body := Box.new()
 	body.name = node_name
 	body.position = pos
 	body.mass = box_mass

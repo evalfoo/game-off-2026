@@ -12,7 +12,7 @@ func run() -> void:
 # Jumps in place and returns how far the feet rose.
 func _jump_height(big: bool) -> float:
 	var game := Fixture.launch(root)
-	var player: RigidBody2D = game.player
+	var player: CharacterBody2D = game.player
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
 	await physics(40)

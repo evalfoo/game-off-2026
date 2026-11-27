@@ -1,13 +1,13 @@
 extends "res://tests/lib/test.gd"
 
 # With time stopped (Engine.time_scale = 0, as the play driver does between
-# turns), a box the player is pushing stays where it is instead of turning to
-# NaN, and moves again once time runs. See evalfoo/godot-template#44.
+# turns), a box the player is pushing stays where it is, and moves again once
+# time runs.
 
 func run() -> void:
 	var game := Fixture.launch(root)
-	var box: RigidBody2D = game.get_node("BoxA")
-	var player: RigidBody2D = game.player
+	var box: CharacterBody2D = game.get_node("BoxA")
+	var player: CharacterBody2D = game.player
 	player.position.x = box.position.x - 60
 	Events.hold_key(KEY_RIGHT, true)
 	await physics(30)
