@@ -132,8 +132,11 @@ func _pulled(point: Vector2) -> Vector2:
 			toward = at
 	if amount == 0.0:
 		return point
+	# The limits are in world space, and point is in the parent's.
+	var parent := get_parent() as Node2D
+	var world := parent.to_global(point)
 	var half_view := get_viewport_rect().size * 0.5
-	var resting := Vector2(
-		clampf(point.x, limit_left + half_view.x, limit_right - half_view.x),
-		clampf(point.y, limit_top + half_view.y, limit_bottom - half_view.y))
+	var resting := parent.to_local(Vector2(
+		clampf(world.x, limit_left + half_view.x, limit_right - half_view.x),
+		clampf(world.y, limit_top + half_view.y, limit_bottom - half_view.y)))
 	return resting.lerp(toward, amount)
