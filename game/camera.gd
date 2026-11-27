@@ -1,10 +1,11 @@
 extends Camera2D
 
-# Follows the player in a room wider than the view. Camera2D does most of it:
-# its drag margins are the camera window, which holds the view still while the
-# player walks inside it and scrolls when they push against its edge; position
-# smoothing glides toward the target; limits keep the room's edges on screen.
-# This script adds the one rule Camera2D lacks: the height follows the player
+# Follows the player in a room wider than the view. Camera2D does part of it:
+# position smoothing glides toward the target; limits keep the room's edges on
+# screen. The script keeps the camera window, which holds the view still while
+# the player walks inside it and scrolls when they push against its edge. It
+# keeps it rather than using Camera2D's drag margins, so a pull moves the view
+# by its full amount instead of first crossing the window. The height follows the player
 # only when they stand on a floor, and holds still while they are in the air,
 # so a jump doesn't move the view. Standing on a seesaw plank holds it too, so
 # the view doesn't bob as the plank tilts. Once the feet drop below the camera
@@ -16,6 +17,8 @@ extends Camera2D
 # Holding Up or Down looks that way by look_distance, eased by the same
 # smoothing, while the player stands on a floor. shake() shakes the view
 # through Camera2D's offset, which the follow rules ignore.
+# Objects the room marks with pull_toward draw the view partway toward them
+# while the player is near.
 #
 # The room sets target and the limits before adding it, after the player, so
 # each physics step it follows where the player has just moved.
@@ -61,6 +64,10 @@ var target: Player
 var side := 1.0
 # The furthest x the player has reached toward side.
 var _furthest := 0.0
+# The camera window's centre x. It follows the look-ahead point only when that
+# point reaches the window's edge.
+var _window_x := 0.0
+var _pulls: Array[Pull] = []
 # How far above the standing height the view was on the last floor, and the
 # feet's height there; see _physics_process.
 var _lift := 0.0
@@ -76,9 +83,15 @@ var _shake_length := 0.0
 var _shake_time := 0.0
 
 
+class Pull:
+	var node: Node2D
+	var inner_radius: float
+	var outer_radius: float
+	var share: float
+
+
 func _ready() -> void:
 	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
-	drag_horizontal_enabled = true
 	_apply_size()
 	# Camera2D updates the view in its own physics step, which runs before this
 	# script's, so the view would always trail the target set here by a step.
@@ -86,7 +99,13 @@ func _ready() -> void:
 	set_physics_process_internal(false)
 	_rng.seed = rng_seed
 	_furthest = target.position.x
-	position = Vector2(_look_ahead_x(), _inside_limits(target.position.y - feet_below_centre))
+	_window_x = _look_ahead_x()
+	var start := Vector2(_window_x, _inside_limits(target.position.y - feet_below_centre))
+	position = _pulled(start)
+	# A pull moves the height only on a floor, as in _physics_process, so a
+	# start in the air keeps the ordinary height.
+	if not target.is_on_floor() or _on_plank():
+		position.y = start.y
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
 	# the view would sit at the room's top-left corner.
@@ -106,13 +125,19 @@ func shake(strength: float, length: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_apply_size()
-	position.x = _look_ahead_x()
+	# Zoom 2 shows half as many world pixels, so the window is half as wide.
+	var half_window := drag_right_margin * get_viewport_rect().size.x * 0.5 / zoom.x
+	var ahead := _look_ahead_x()
+	_window_x = clampf(_window_x, ahead - half_window, ahead + half_window)
+	# The height a pull moves from: the look and the room's limits first.
+	var floor_y := _inside_limits(target.position.y - feet_below_centre)
+	var pulled := _pulled(Vector2(_window_x, floor_y))
+	position.x = pulled.x
 	# Where the view sits without the shake, which doesn't move where it goes.
 	var centre_y := get_screen_center_position().y - offset.y
 	var share := position_smoothing_speed * delta if position_smoothing_enabled else 1.0
 	var on_plank := target.is_on_floor() and _on_plank()
 	var standing := target.is_on_floor() and not on_plank
-	var floor_y := _inside_limits(target.position.y - feet_below_centre)
 	# The plank is not the floor the look was made on, and it can drop below
 	# where the player landed, so landing on it ends the look's room.
 	if on_plank:
@@ -135,7 +160,7 @@ func _physics_process(delta: float) -> void:
 	elif standing:
 		# Clamped after the look, so a look from a floor near the room's edge
 		# doesn't move the view off the edge.
-		position.y = _inside_limits(_look(target.position.y - feet_below_centre))
+		position.y = _pulled(Vector2(_window_x, _inside_limits(_look(target.position.y - feet_below_centre)))).y
 	else:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.
@@ -195,6 +220,8 @@ func _shake_step(delta: float) -> void:
 # Sets the camera window and smoothing for the player's size.
 func _apply_size() -> void:
 	var margin := lerpf(small_window_margin, big_window_margin, target.t)
+	# Camera2D's drag margins hold the window's size for the script's own
+	# window; drag_horizontal_enabled stays off, so Camera2D doesn't use them.
 	drag_left_margin = margin
 	drag_right_margin = margin
 	var speed := lerpf(small_smoothing_speed, big_smoothing_speed, target.t)
@@ -228,3 +255,50 @@ func _look_ahead_x() -> float:
 		side = -side
 		_furthest = x
 	return x + side * lerpf(small_look_ahead, big_look_ahead, target.t)
+
+
+# Marks node as pulling the view toward it. While the player's feet are
+# outer_radius or more from it, it doesn't pull; at inner_radius or closer, the
+# view's target moves share of the way from where it would be to the node;
+# between the two the pull blends in with the distance. inner_radius must be
+# less than outer_radius. Where pulls overlap, the strongest one counts.
+func pull_toward(node: Node2D, inner_radius: float, outer_radius: float, share: float) -> void:
+	var pull := Pull.new()
+	pull.node = node
+	pull.inner_radius = inner_radius
+	pull.outer_radius = outer_radius
+	pull.share = share
+	_pulls.append(pull)
+
+
+# Moves point toward the strongest pull at the player's distance from it. The
+# move starts from where the room's limits let the view rest, not from point,
+# which can lie past a room edge. From there, a pull back into the room could
+# end short of the edge and not move the view at all.
+func _pulled(point: Vector2) -> Vector2:
+	var toward := point
+	var amount := 0.0
+	# The parent's place in the world. A room's world sits in a SubViewport,
+	# which isn't a Node2D and puts the camera at the world's origin.
+	var parent := get_parent() as Node2D
+	var frame := parent.global_transform if parent else Transform2D.IDENTITY
+	for pull: Pull in _pulls:
+		if not is_instance_valid(pull.node):
+			continue
+		var at := frame.affine_inverse() * pull.node.global_position
+		var blend := inverse_lerp(pull.outer_radius, pull.inner_radius, target.position.distance_to(at))
+		var strength := pull.share * clampf(blend, 0.0, 1.0)
+		if strength > amount:
+			amount = strength
+			toward = at
+	if amount == 0.0:
+		return point
+	# The limits are in world space, and point is in the parent's. The pulled
+	# point stays inside them too: Camera2D clamps only the view it shows, so a
+	# target past a limit would leave the eased position there, and the view
+	# would wait at the edge after the pull or a fall moves it away.
+	var half_view := get_viewport_rect().size * 0.5 / zoom
+	var low := Vector2(limit_left, limit_top) + half_view
+	var high := Vector2(limit_right, limit_bottom) - half_view
+	var resting := frame.affine_inverse() * (frame * point).clamp(low, high)
+	return frame.affine_inverse() * (frame * resting.lerp(toward, amount)).clamp(low, high)
