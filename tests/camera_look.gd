@@ -6,9 +6,10 @@ extends "res://tests/lib/test.gd"
 # limit staged lower, and the unstaged room checks the view stops at its edge
 # and starts back as soon as Down is let go.
 #
-# Also: the held look stays put at smoothing speeds 0 and 30, walking off the
-# step while looking up keeps the player on screen, and looking down from a
-# platform at the room's top leaves the view at its top edge.
+# Also: the held look stays put at smoothing speeds 0 and 30 and through a
+# jump with Up held, walking off the step while looking up keeps the player on
+# screen, and looking down from a platform at the room's top leaves the view
+# at its top edge.
 
 const Tiles := preload("res://game/tiles.gd")
 const HALF_VIEW := Vector2(160, 90)
@@ -82,6 +83,7 @@ func run() -> void:
 
 	await _check_held_up(0.0)
 	await _check_held_up(30.0)
+	await _check_jump_looking_up()
 	await _check_walk_off_looking_up()
 	await _check_down_at_top()
 
@@ -114,6 +116,37 @@ func _check_held_up(speed: float) -> void:
 	Events.hold_key(KEY_UP, false)
 	check(view[1] - view[0] < 0.01 and absf(view[0] - (rest - camera.look_distance)) < 0.5,
 		"smoothing speed %.0f: holding Up, the view stays %d px up on every frame: y %.1f to %.1f, from %.1f" % [speed, camera.look_distance, view[0], view[1], rest])
+	await _free_room()
+
+
+# Jumping while Up is held: the view holds the look through the jump and the
+# landing, the landing frame included.
+func _check_jump_looking_up() -> void:
+	_new_room()
+	var player: CharacterBody2D = room.player
+	await physics(60)
+	Events.hold_key(KEY_UP, true)
+	await physics(120)
+	var looked := _centre_y()
+	Events.hold_key(KEY_SPACE, true)
+	await physics(2)
+	var moved := 0.0
+	var landed := false
+	var after := 0
+	for i: int in 300:
+		await physics(1)
+		moved = maxf(moved, absf(_centre_y() - looked))
+		if not player.is_on_floor():
+			Events.hold_key(KEY_SPACE, false)
+			landed = true
+		elif landed:
+			after += 1
+			if after >= 30:
+				break
+	Events.hold_key(KEY_SPACE, false)
+	Events.hold_key(KEY_UP, false)
+	check(landed and after >= 30 and moved < 0.5,
+		"jumping with Up held, the view holds the look through the landing and 30 frames after: moved at most %.2f px" % moved)
 	await _free_room()
 
 
