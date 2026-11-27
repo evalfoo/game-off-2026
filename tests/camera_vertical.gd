@@ -113,7 +113,8 @@ func _check_start_in_air(smoothing: float) -> void:
 	camera.limit_top = 0
 	camera.limit_right = int(size.x)
 	camera.limit_bottom = int(size.y)
-	camera.smoothing_speed = smoothing
+	camera.small_smoothing_speed = smoothing
+	camera.big_smoothing_speed = smoothing
 	room.add_child(camera)
 	var lowest := -INF
 	for i: int in 300:

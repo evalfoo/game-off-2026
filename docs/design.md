@@ -30,6 +30,10 @@ A sidescroller platformer with some puzzle elements that depend on the player si
 
 - The player can only push one box.
 
+## Camera
+
+- Manual look up and down: Up / Down arrows.
+
 ## Grey-box order
 
 - The seesaw first.
