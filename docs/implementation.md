@@ -13,7 +13,7 @@ Godot 4.7.2 stable (pinned in `mise.toml`), GDScript, Forward+ renderer. The mai
 Keep the game's simulation apart from presentation, so headless tests can drive the rules without a window.
 
 - `game/main.gd`: builds the level (floor, walls, `BOX A`, `BOX B`), the player and the readout in code.
-- `game/player.gd`: the player, a `RigidBody2D` with rotation locked. Holding Shift eases size, mass and speed from the small values to the big ones; its origin sits at the feet, so it grows upward.
+- `game/player.gd`: the player, a `RigidBody2D` with rotation locked. Holding Shift eases size, mass, speed and jump speed from the small values to the big ones; its origin sits at the feet, so it grows upward.
 - `game/play_hooks.gd`: the readout text for the play driver.
 - `game/rooms/seesaw.tscn`: a grey-box room for the seesaw puzzle, separate from the main scene. It copies `main.gd`'s pause workaround. Open it with `mise exec -- godot --path . res://game/rooms/seesaw.tscn`, or the game MCP server's `scene`.
 
