@@ -6,7 +6,10 @@ extends Camera2D
 # smoothing glides toward the target; limits keep the room's edges on screen.
 # This script adds the one rule Camera2D lacks: the height follows the player
 # only when they stand on a floor, and holds still while they are in the air,
-# so a jump doesn't move the view. It also follows a look-ahead point in front
+# so a jump doesn't move the view. Standing on a seesaw plank holds it too, so
+# the view doesn't bob as the plank tilts. Once the feet drop below the camera
+# window's bottom edge, window_bottom below the view's centre, the height
+# follows them right away, so a long fall stays on screen. It also follows a look-ahead point in front
 # of the player instead of the player, so the view shows more ahead than behind.
 # The point changes sides only once the player has walked flip_distance back
 # from the furthest point they reached, so a short turn doesn't swing the view.
@@ -15,6 +18,7 @@ extends Camera2D
 # each physics step it follows where the player has just moved.
 
 const Player := preload("res://game/player.gd")
+const Plank := preload("res://game/seesaw_plank.gd")
 
 # Half the camera window's width, as a share of half the view's width: 0.2 is
 # 32 px either side of the centre.
@@ -33,6 +37,10 @@ const Player := preload("res://game/player.gd")
 # the look-ahead point changes sides. A shorter turn keeps the point on its
 # side.
 @export var flip_distance := 32.0
+# How far below the view's centre the feet can drop while the height holds, in
+# the air or on a plank: 80 px puts them at y 170 of the 180 view, 10 px lower
+# than standing feet. Past it, the view follows the feet down at once.
+@export var window_bottom := 80.0
 
 var target: Player
 # 1 while the look-ahead point is right of the player, -1 while it is left.
@@ -62,15 +70,37 @@ func _ready() -> void:
 	force_update_scroll()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	position.x = _look_ahead_x()
-	if target.is_on_floor():
-		position.y = target.position.y - feet_below_centre
+	var centre_y := get_screen_center_position().y
+	var share := position_smoothing_speed * delta
+	if target.is_on_floor() and not _on_plank():
+		position.y = _inside_limits(target.position.y - feet_below_centre)
+	elif target.position.y > centre_y + window_bottom and share > 0.0:
+		# Smoothing moves the view `share` of the way to its target each
+		# step, so aiming that much further puts the window's bottom edge on the
+		# feet this step instead of trailing a fast fall.
+		var wanted := _inside_limits(target.position.y - window_bottom)
+		position.y = centre_y + (wanted - centre_y) / share
 	else:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.
-		position.y = get_screen_center_position().y
+		position.y = centre_y
 	force_update_scroll()
+
+
+# Keeps a height the view eases toward inside the limits. Camera2D clamps only
+# the view it shows, so a target past a limit would leave its eased position
+# there, and a fall from there would trail by the difference.
+func _inside_limits(y: float) -> float:
+	var half := get_viewport_rect().size.y / 2.0
+	return clampf(y, limit_top + half, limit_bottom - half)
+
+
+func _on_plank() -> bool:
+	var hit := KinematicCollision2D.new()
+	return target.test_move(target.global_transform, -target.up_direction * target.floor_snap_length, hit) \
+			and hit.get_collider() is Plank
 
 
 func _look_ahead_x() -> float:
