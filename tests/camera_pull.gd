@@ -7,7 +7,8 @@ extends "res://tests/lib/test.gd"
 # when the marker is moved far away: no pull outside or at the outer ring,
 # half the share midway, the full share at the inner ring and inside, from
 # both walk directions. A jump inside the inner ring keeps the view's height,
-# and a marker by the right wall pulls the view only to the room's edge. Every
+# a marker by the right wall pulls the view only to the room's edge, and a
+# marker inside the room pulls a view resting at that edge back in. Every
 # physics frame checks the view stays inside the room.
 
 const HALF_VIEW := Vector2(160, 90)
@@ -90,26 +91,39 @@ func run() -> void:
 			and absf(_centre().x - (size.x - HALF_VIEW.x)) < 0.01,
 		"a marker by the right wall pulls the view from %.1f to the room's edge, %.1f" % [unpulled, _centre().x])
 
+	# With the look-ahead point right and the view resting at the right edge, a
+	# marker inside the room pulls the view back in by the full blend, from
+	# the edge rather than from the point past it.
+	player.position.x = size.x - 200.0
+	await physics(2)
+	await _walk(KEY_RIGHT, func() -> bool: return player.position.x >= size.x - 130.0)
+	var resting := await _check_at(player.position.x, "at the right edge, pulling back into the room",
+			Vector2(size.x - 205.0, floor_y - 70.0))
+	check(camera.side == 1.0 and absf(resting.x - (size.x - HALF_VIEW.x)) < 0.01,
+		"before that pull, the view rests at the room's right edge: %.1f" % resting.x)
+
 	check(outside == 0, "the view stays inside the room every frame: %d frames outside" % outside)
 	room.free()
 
 
-# Stands the player at x, then compares the settled view with the marker in
-# place against the settled view with it far away.
-func _check_at(x: float, label: String) -> void:
+# Stands the player at x, then compares the settled view with the marker at
+# `at` against the settled view with it far away. Returns the view without
+# the pull.
+func _check_at(x: float, label: String, at := MARK) -> Vector2:
 	player.position.x = x
 	marker.position = FAR
 	await physics(150)
 	var unpulled := _centre()
-	marker.position = MARK
+	marker.position = at
 	await physics(150)
 	var pulled := _centre()
-	var distance := player.position.distance_to(MARK)
+	var distance := player.position.distance_to(at)
 	var weight := clampf((OUTER - distance) / (OUTER - INNER), 0.0, 1.0)
-	var expected := unpulled.lerp(MARK, SHARE * weight)
+	var expected := unpulled.lerp(at, SHARE * weight)
 	check(pulled.distance_to(expected) < 0.5,
 		"%s, %.1f px from the marker: the view moves %.2f of the way toward it, (%.1f, %.1f) -> (%.1f, %.1f), expected (%.1f, %.1f)" % [
 			label, distance, SHARE * weight, unpulled.x, unpulled.y, pulled.x, pulled.y, expected.x, expected.y])
+	return unpulled
 
 
 func _centre() -> Vector2:

@@ -114,7 +114,10 @@ func pull_toward(node: Node2D, inner_radius: float, outer_radius: float, share: 
 	_pulls.append(pull)
 
 
-# Moves point toward the strongest pull at the player's distance from it.
+# Moves point toward the strongest pull at the player's distance from it. The
+# move starts from where the room's limits let the view rest, not from point,
+# which can lie past a room edge. From there, a pull back into the room could
+# end short of the edge and not move the view at all.
 func _pulled(point: Vector2) -> Vector2:
 	var toward := point
 	var amount := 0.0
@@ -127,4 +130,10 @@ func _pulled(point: Vector2) -> Vector2:
 		if strength > amount:
 			amount = strength
 			toward = at
-	return point.lerp(toward, amount)
+	if amount == 0.0:
+		return point
+	var half_view := get_viewport_rect().size * 0.5
+	var resting := Vector2(
+		clampf(point.x, limit_left + half_view.x, limit_right - half_view.x),
+		clampf(point.y, limit_top + half_view.y, limit_bottom - half_view.y))
+	return resting.lerp(toward, amount)
