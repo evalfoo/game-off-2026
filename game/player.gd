@@ -53,6 +53,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# A jump pressed during a pause still counts once time runs.
+	if Input.is_action_just_pressed("ui_accept"):
+		_jump_buffer = jump_buffer_time
 	# The play driver's pause runs zero-length frames.
 	if delta <= 0.0:
 		return
@@ -74,11 +77,11 @@ func _physics_process(delta: float) -> void:
 	velocity.y += gravity * gravity_scale * delta
 
 	_coyote = coyote_time if is_on_floor() else _coyote - delta
-	_jump_buffer = jump_buffer_time if Input.is_action_just_pressed("ui_accept") else _jump_buffer - delta
 	if _jump_buffer > 0.0 and _coyote > 0.0:
 		velocity.y = -jump_speed
 		_coyote = 0.0
 		_jump_buffer = 0.0
+	_jump_buffer -= delta
 	_push_ahead(velocity.x * delta)
 	move_and_slide()
 	_carry()

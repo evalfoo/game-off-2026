@@ -2,7 +2,7 @@ extends "res://tests/lib/test.gd"
 
 # The small player's controls: quick starts and stops, a short jump on a short
 # press, falling faster than rising, a jump just after walking off an edge, and
-# a jump pressed just before landing.
+# a jump pressed just before landing or while time is stopped.
 
 func run() -> void:
 	await _speed()
@@ -10,6 +10,7 @@ func run() -> void:
 	await _fall()
 	await _coyote()
 	await _buffer()
+	await _pause()
 
 func _speed() -> void:
 	var game := Fixture.launch(root)
@@ -113,6 +114,25 @@ func _press_before_landing(frames: int) -> bool:
 func _buffer() -> void:
 	check(await _press_before_landing(3), "a jump pressed 3 frames before landing jumps on landing")
 	check(not await _press_before_landing(12), "pressed 12 frames before, it doesn't")
+
+# The play driver stops time between turns, and zero-length physics frames
+# still run. A tap of jump then still jumps once time runs.
+func _pause() -> void:
+	var game := Fixture.launch(root)
+	var player: CharacterBody2D = game.player
+	await physics(10)
+	var start := player.position.y
+	Engine.time_scale = 0.0
+	await physics(1)
+	Events.key(KEY_SPACE)
+	await physics(2)
+	Engine.time_scale = 1.0
+	var top := start
+	for i: int in 40:
+		await physics_frame
+		top = minf(top, player.position.y)
+	check(start - top > 10.0, "a tap of jump while time is stopped jumps once it runs: %.1f px" % (start - top))
+	await _end(game)
 
 func _end(game: Node) -> void:
 	game.free()
