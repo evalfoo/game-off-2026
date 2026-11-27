@@ -5,8 +5,8 @@ extends CharacterBody2D
 # Releasing eases back. The origin sits at the feet, so growth goes upward.
 #
 # Custom physics: the code moves the player, and its weight is code too. It
-# pushes the boxes it walks into (game/box.gd) and weighs down the seesaw plank
-# it stands on (game/seesaw_plank.gd).
+# pushes the boxes it walks into (game/box.gd) and, once fully big, sinks the
+# linked platform it stands on (game/linked_platform.gd).
 
 @export var small_size := Vector2(10, 16)
 @export var big_size := Vector2(30, 48)
@@ -114,12 +114,20 @@ func _push_ahead(offset_x: float) -> void:
 		body.call("push", offset_x)
 
 
-# Weighs down what the player stands on. It looks for the floor just below,
-# because a floor that snapping holds the player to records no slide collision.
+# Tells what the player stands on how big it is. It looks for the floor just
+# below, because a floor that snapping holds the player to records no slide
+# collision. Standing half on something else too, such as the floor beside a
+# linked platform, the player stands on that, so the platform doesn't sink.
 func _carry() -> void:
 	var hit := KinematicCollision2D.new()
-	if not is_on_floor() or not test_move(global_transform, -up_direction * floor_snap_length, hit):
+	var down := -up_direction * floor_snap_length
+	if not is_on_floor() or not test_move(global_transform, down, hit):
 		return
-	var body := hit.get_collider()
-	if body.has_method("carry"):
-		body.call("carry", mass, global_position.x)
+	var body := hit.get_collider() as PhysicsBody2D
+	if not body or not body.has_method("carry"):
+		return
+	add_collision_exception_with(body)
+	var also := test_move(global_transform, down)
+	remove_collision_exception_with(body)
+	if not also:
+		body.call("carry", t)

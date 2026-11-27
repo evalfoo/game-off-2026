@@ -7,8 +7,7 @@ extends Camera2D
 # keeps it rather than using Camera2D's drag margins, so a pull moves the view
 # by its full amount instead of first crossing the window. The height follows the player
 # only when they stand on a floor, and holds still while they are in the air,
-# so a jump doesn't move the view. Standing on a seesaw plank holds it too, so
-# the view doesn't bob as the plank tilts. Once the feet drop below the camera
+# so a jump doesn't move the view. Once the feet drop below the camera
 # window's bottom edge, window_bottom below the view's centre, the height
 # follows them right away, so a long fall stays on screen. It also follows a look-ahead point in front
 # of the player instead of the player, so the view shows more ahead than behind.
@@ -24,7 +23,6 @@ extends Camera2D
 # each physics step it follows where the player has just moved.
 
 const Player := preload("res://game/player.gd")
-const Plank := preload("res://game/seesaw_plank.gd")
 const FALL_TOLERANCE := 0.01
 # How far below its standing height the player can be and still count as on
 # that floor. A fall's first step drops it about 0.27 px.
@@ -52,9 +50,9 @@ const STAND_TOLERANCE := 0.1
 # the look-ahead point changes sides. A shorter turn keeps the point on its
 # side.
 @export var flip_distance := 32.0
-# How far below the view's centre the feet can drop while the height holds, in
-# the air or on a plank: 80 px puts them at y 170 of the 180 view, 10 px lower
-# than standing feet. Past it, the view follows the feet down at once.
+# How far below the view's centre the feet can drop while the height holds in
+# the air: 80 px puts them at y 170 of the 180 view, 10 px lower than standing
+# feet. Past it, the view follows the feet down at once.
 @export var window_bottom := 80.0
 # How far Up or Down moves the view.
 @export var look_distance := 48.0
@@ -104,7 +102,7 @@ func _ready() -> void:
 	position = _pulled(start)
 	# A pull moves the height only on a floor, as in _physics_process, so a
 	# start in the air keeps the ordinary height.
-	if not target.is_on_floor() or _on_plank():
+	if not target.is_on_floor():
 		position.y = start.y
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
@@ -136,12 +134,7 @@ func _physics_process(delta: float) -> void:
 	# Where the view sits without the shake, which doesn't move where it goes.
 	var centre_y := get_screen_center_position().y - offset.y
 	var share := position_smoothing_speed * delta if position_smoothing_enabled else 1.0
-	var on_plank := target.is_on_floor() and _on_plank()
-	var standing := target.is_on_floor() and not on_plank
-	# The plank is not the floor the look was made on, and it can drop below
-	# where the player landed, so landing on it ends the look's room.
-	if on_plank:
-		_lift = 0.0
+	var standing := target.is_on_floor()
 	# Looking up on a floor puts the feet below the view's centre by that much
 	# more on purpose, and a jump holds the view there. Any drop below the
 	# standing height is a fall, not looking, so it gets no such room. Both come
@@ -239,12 +232,6 @@ func _apply_size() -> void:
 func _inside_limits(y: float) -> float:
 	var half := get_viewport_rect().size.y / 2.0
 	return clampf(y, limit_top + half, limit_bottom - half)
-
-
-func _on_plank() -> bool:
-	var hit := KinematicCollision2D.new()
-	return target.test_move(target.global_transform, -target.up_direction * target.floor_snap_length, hit) \
-			and hit.get_collider() is Plank
 
 
 func _look_ahead_x() -> float:
