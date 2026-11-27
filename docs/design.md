@@ -15,6 +15,10 @@ A sidescroller platformer with some puzzle elements that depend on the player si
 - Two states, small and big.
 - Big jumps lower.
 
+## Pushing
+
+- The player can only push one box.
+
 ## Grey-box order
 
 - The seesaw first.

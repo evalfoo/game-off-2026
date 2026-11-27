@@ -1,8 +1,12 @@
-extends RigidBody2D
+extends CharacterBody2D
 
 # Holding Shift eases the player from the small state to the big state: bigger,
 # heavier, slower and a lower jump.
 # Releasing eases back. The origin sits at the feet, so growth goes upward.
+#
+# Custom physics: the code moves the player, and its weight is code too. It
+# pushes the boxes it walks into (game/box.gd) and weighs down the seesaw plank
+# it stands on (game/seesaw_plank.gd).
 
 @export var small_size := Vector2(32, 48)
 @export var big_size := Vector2(96, 144)
@@ -15,34 +19,42 @@ extends RigidBody2D
 @export var small_jump_speed := 500.0
 # Half the small jump's height: the height goes with the speed squared.
 @export var big_jump_speed := 354.0
+# The player pushes boxes up to this many times its mass: small moves BOX A
+# (mass 2), big moves BOX B (mass 8).
+@export var push_ratio := 3.0
 
 var t := 0.0
+var mass := small_mass
 var speed := small_speed
 var jump_speed := small_jump_speed
 var shape := RectangleShape2D.new()
 var collision := CollisionShape2D.new()
-var jump_requested := false
+var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 
 func _ready() -> void:
-	lock_rotation = true
-	can_sleep = false
-	contact_monitor = true
-	max_contacts_reported = 8
-	# Movement sets velocity directly, so floor friction would only eat speed.
-	physics_material_override = PhysicsMaterial.new()
-	physics_material_override.friction = 0.0
+	floor_stop_on_slope = true
 	collision.shape = shape
 	add_child(collision)
 	_apply_size()
 
 
 func _physics_process(delta: float) -> void:
+	# The play driver's pause runs zero-length frames.
+	if delta <= 0.0:
+		return
 	var target := 1.0 if Input.is_key_pressed(KEY_SHIFT) else 0.0
 	t = move_toward(t, target, delta / transition_time)
 	_apply_size()
-	if Input.is_action_just_pressed("ui_accept"):
-		jump_requested = true
+
+	var dir := Input.get_axis("ui_left", "ui_right")
+	velocity.x = lerpf(velocity.x, dir * speed, clampf(accel * delta, 0.0, 1.0))
+	velocity.y += gravity * delta
+	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+		velocity.y = -jump_speed
+	_push_ahead(velocity.x * delta)
+	move_and_slide()
+	_carry()
 
 
 func _apply_size() -> void:
@@ -55,23 +67,28 @@ func _apply_size() -> void:
 	queue_redraw()
 
 
+# Moves the box in the way first, if the player is heavy enough, so the
+# player walks on at full speed in the same step.
+func _push_ahead(offset_x: float) -> void:
+	var hit := KinematicCollision2D.new()
+	if offset_x == 0.0 or not test_move(global_transform, Vector2(offset_x, 0), hit):
+		return
+	var body := hit.get_collider()
+	if body.has_method("push") and float(body.get("mass")) <= mass * push_ratio:
+		body.call("push", offset_x)
+
+
+# Weighs down what the player stands on. It looks for the floor just below,
+# because a floor that snapping holds the player to records no slide collision.
+func _carry() -> void:
+	var hit := KinematicCollision2D.new()
+	if not is_on_floor() or not test_move(global_transform, -up_direction * floor_snap_length, hit):
+		return
+	var body := hit.get_collider()
+	if body.has_method("carry"):
+		body.call("carry", mass, global_position.x)
+
+
 func _draw() -> void:
 	var size := shape.size
 	draw_rect(Rect2(-size.x / 2, -size.y, size.x, size.y), Color.WHITE)
-
-
-func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
-	var dir := Input.get_axis("ui_left", "ui_right")
-	var v := state.linear_velocity
-	v.x = lerpf(v.x, dir * speed, clampf(accel * state.step, 0.0, 1.0))
-	if jump_requested and _on_floor(state):
-		v.y = -jump_speed
-	jump_requested = false
-	state.linear_velocity = v
-
-
-func _on_floor(state: PhysicsDirectBodyState2D) -> bool:
-	for i: int in state.get_contact_count():
-		if state.get_contact_local_normal(i).dot(Vector2.UP) > 0.5:
-			return true
-	return false
