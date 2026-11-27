@@ -76,7 +76,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	var half_window := window_margin * get_viewport_rect().size.x * 0.5
+	# Zoom 2 shows half as many world pixels, so the window is half as wide.
+	var half_window := window_margin * get_viewport_rect().size.x * 0.5 / zoom.x
 	var ahead := _look_ahead_x()
 	_window_x = clampf(_window_x, ahead - half_window, ahead + half_window)
 	var pulled := _pulled(Vector2(_window_x, target.position.y - feet_below_centre))
@@ -135,7 +136,7 @@ func _pulled(point: Vector2) -> Vector2:
 	# The limits are in world space, and point is in the parent's.
 	var parent := get_parent() as Node2D
 	var world := parent.to_global(point)
-	var half_view := get_viewport_rect().size * 0.5
+	var half_view := get_viewport_rect().size * 0.5 / zoom
 	var resting := parent.to_local(Vector2(
 		clampf(world.x, limit_left + half_view.x, limit_right - half_view.x),
 		clampf(world.y, limit_top + half_view.y, limit_bottom - half_view.y)))

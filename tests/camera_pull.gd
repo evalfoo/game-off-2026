@@ -9,8 +9,9 @@ extends "res://tests/lib/test.gd"
 # both walk directions. A jump inside the inner ring keeps the view's height,
 # a marker by the right wall pulls the view only to the room's edge, and a
 # marker inside the room pulls a view resting at that edge back in, also with
-# the room away from the world's origin. Every physics frame checks the view
-# stays inside the room.
+# the room away from the world's origin. At zoom 2 the window and the room's
+# edges use the smaller view. Every physics frame checks the view stays inside
+# the room.
 
 const HALF_VIEW := Vector2(160, 90)
 const INNER := 112.0
@@ -107,6 +108,8 @@ func run() -> void:
 	room.free()
 	await physics_frame
 	await _check_moved_room()
+	await physics_frame
+	await _check_zoom()
 
 
 # The wide room placed one room's width right of the world's origin, with
@@ -137,9 +140,46 @@ func _check_moved_room() -> void:
 	var weight := clampf((OUTER - distance) / (OUTER - INNER), 0.0, 1.0)
 	var expected := unpulled.lerp(room.to_global(at), SHARE * weight)
 	check(start < 600.0 and _centre().distance_to(expected) < 0.5,
-		"in a room at world x %d, a marker %.1f px left of the player pulls the view %.2f of the way, (%.1f, %.1f) -> (%.1f, %.1f), expected (%.1f, %.1f)" % [
+		"in a room at world x %d, a marker left of the player, %.1f px from their feet, pulls the view %.2f of the way, (%.1f, %.1f) -> (%.1f, %.1f), expected (%.1f, %.1f)" % [
 			size.x, distance, SHARE * weight, unpulled.x, unpulled.y, _centre().x, _centre().y, expected.x, expected.y])
 	check(outside == 0, "in the moved room, the view stays inside the room every frame: %d frames outside" % outside)
+	room.free()
+
+
+# The wide room with the camera at zoom 2, which shows 160 x 90 world pixels:
+# after walking right, the view settles the look-ahead less half the narrower
+# window ahead of the player. By the right wall, with the view at the room's
+# edge, a marker further right holds it there.
+func _check_zoom() -> void:
+	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	root.add_child(room)
+	player = room.player
+	camera = room.camera
+	camera.zoom = Vector2(2, 2)
+	marker = Node2D.new()
+	marker.position = FAR
+	room.add_child(marker)
+	camera.call("pull_toward", marker, INNER, OUTER, SHARE)
+	outside = 0
+	var size: Vector2 = room.SIZE
+	var ahead: float = camera.small_look_ahead
+	var half_window: float = camera.window_margin * HALF_VIEW.x / 2.0
+	player.position.x = 540.0
+	await physics(2)
+	await _walk(KEY_RIGHT, func() -> bool: return player.position.x >= 600.0)
+	await physics(150)
+	check(absf(_centre().x - (player.position.x + ahead - half_window)) < 0.5,
+		"at zoom 2, walking right, the view settles %.1f px ahead of the player: %.1f" % [ahead - half_window, _centre().x - player.position.x])
+
+	player.position.x = size.x - 45.0
+	await physics(150)
+	var edge := size.x - HALF_VIEW.x / 2.0
+	var resting := _centre().x
+	marker.position = Vector2(size.x - 60.0, 186.0)
+	await physics(150)
+	check(absf(resting - edge) < 0.01 and absf(_centre().x - edge) < 0.01,
+		"at zoom 2, by the right wall, a marker further right holds the view at the room's edge, %.1f: %.1f -> %.1f" % [edge, resting, _centre().x])
+	check(outside == 0, "at zoom 2, the view stays inside the room every frame: %d frames outside" % outside)
 	room.free()
 
 
@@ -184,6 +224,7 @@ func physics(count: int) -> void:
 		await physics_frame
 		var c := _centre() - room.position
 		var room_size: Vector2 = room.SIZE
-		if c.x < HALF_VIEW.x - 0.01 or c.x > room_size.x - HALF_VIEW.x + 0.01 \
-				or c.y < HALF_VIEW.y - 0.01 or c.y > room_size.y - HALF_VIEW.y + 0.01:
+		var half := HALF_VIEW / camera.zoom
+		if c.x < half.x - 0.01 or c.x > room_size.x - half.x + 0.01 \
+				or c.y < half.y - 0.01 or c.y > room_size.y - half.y + 0.01:
 			outside += 1
