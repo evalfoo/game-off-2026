@@ -16,13 +16,18 @@ extends Camera2D
 
 const Player := preload("res://game/player.gd")
 
+# The camera window, smoothing and look-ahead each have a small and a big
+# value, and blend between them as the player grows, by the player's t.
+#
 # Half the camera window's width, as a share of half the view's width: 0.2 is
 # 32 px either side of the centre.
-@export var window_margin := 0.2
+@export var small_window_margin := 0.2
+@export var big_window_margin := 0.2
 # How far above the player's feet the view's centre sits, so standing feet show
 # at y 160 of the 180 view, as in the one-screen rooms.
 @export var feet_below_centre := 70.0
-@export var smoothing_speed := 5.0
+@export var small_smoothing_speed := 5.0
+@export var big_smoothing_speed := 5.0
 # How far in front of the player the look-ahead point sits: a quarter of the
 # view's width when small, less when big, as the big player walks slower. Less
 # the window's half width, it is how far ahead of the player the view's centre
@@ -44,10 +49,8 @@ var _furthest := 0.0
 func _ready() -> void:
 	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	drag_horizontal_enabled = true
-	drag_left_margin = window_margin
-	drag_right_margin = window_margin
 	position_smoothing_enabled = true
-	position_smoothing_speed = smoothing_speed
+	_apply_size()
 	# Camera2D updates the view in its own physics step, which runs before this
 	# script's, so the view would always trail the target set here by a step.
 	# _physics_process updates it instead, once, after setting the target.
@@ -63,6 +66,7 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_apply_size()
 	position.x = _look_ahead_x()
 	if target.is_on_floor():
 		position.y = target.position.y - feet_below_centre
@@ -71,6 +75,17 @@ func _physics_process(_delta: float) -> void:
 		# easing toward the last landing doesn't carry it on.
 		position.y = get_screen_center_position().y
 	force_update_scroll()
+
+
+# Sets the camera window and smoothing for the player's size.
+func _apply_size() -> void:
+	var margin := lerpf(small_window_margin, big_window_margin, target.t)
+	drag_left_margin = margin
+	drag_right_margin = margin
+	position_smoothing_speed = lerpf(small_smoothing_speed, big_smoothing_speed, target.t)
+	# Setting the smoothing speed turns Camera2D's own physics update back on;
+	# _physics_process updates the view instead (see _ready).
+	set_physics_process_internal(false)
 
 
 func _look_ahead_x() -> float:
