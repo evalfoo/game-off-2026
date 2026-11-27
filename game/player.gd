@@ -1,6 +1,7 @@
 extends RigidBody2D
 
-# Holding Shift eases the player from the small state to the big state.
+# Holding Shift eases the player from the small state to the big state: bigger,
+# heavier, slower and a lower jump.
 # Releasing eases back. The origin sits at the feet, so growth goes upward.
 
 @export var small_size := Vector2(32, 48)
@@ -11,10 +12,13 @@ extends RigidBody2D
 @export var big_speed := 100.0
 @export var transition_time := 0.4
 @export var accel := 12.0
-@export var jump_speed := 500.0
+@export var small_jump_speed := 500.0
+# Half the small jump's height: the height goes with the speed squared.
+@export var big_jump_speed := 354.0
 
 var t := 0.0
 var speed := small_speed
+var jump_speed := small_jump_speed
 var shape := RectangleShape2D.new()
 var collision := CollisionShape2D.new()
 var jump_requested := false
@@ -47,6 +51,7 @@ func _apply_size() -> void:
 	collision.position = Vector2(0, -size.y / 2)
 	mass = lerpf(small_mass, big_mass, t)
 	speed = lerpf(small_speed, big_speed, t)
+	jump_speed = lerpf(small_jump_speed, big_jump_speed, t)
 	queue_redraw()
 
 
