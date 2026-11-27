@@ -67,7 +67,7 @@ func _fall() -> void:
 func _jump_off_edge(frames: int) -> bool:
 	var game := Fixture.launch(root)
 	var player: CharacterBody2D = game.player
-	var box: CharacterBody2D = game.get_node("BoxB")
+	var box: CharacterBody2D = game.get_node("View/World/BoxB")
 	player.position = box.position + Vector2(0, -16)
 	await physics(10)
 	Events.hold_key(KEY_RIGHT, true)

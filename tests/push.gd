@@ -14,8 +14,8 @@ func run() -> void:
 # Walks right into BOX B for 3 seconds and returns how far the box moved.
 func _push(big: bool) -> float:
 	var game := Fixture.launch(root)
-	game.get_node("BoxA").free()
-	var box: CharacterBody2D = game.get_node("BoxB")
+	game.get_node("View/World/BoxA").free()
+	var box: CharacterBody2D = game.get_node("View/World/BoxB")
 	var player: CharacterBody2D = game.player
 	player.position.x = box.position.x - 50
 	if big:
@@ -35,8 +35,8 @@ func _push(big: bool) -> float:
 # and returns how far BOX A moved.
 func _push_stack() -> float:
 	var game := Fixture.launch(root)
-	var box_a: CharacterBody2D = game.get_node("BoxA")
-	var box_b: CharacterBody2D = game.get_node("BoxB")
+	var box_a: CharacterBody2D = game.get_node("View/World/BoxA")
+	var box_b: CharacterBody2D = game.get_node("View/World/BoxB")
 	box_a.position.x = box_b.position.x - 16 - 8
 	var player: CharacterBody2D = game.player
 	player.position.x = box_a.position.x - 50

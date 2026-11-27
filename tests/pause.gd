@@ -6,7 +6,7 @@ extends "res://tests/lib/test.gd"
 
 func run() -> void:
 	var game := Fixture.launch(root)
-	var box: CharacterBody2D = game.get_node("BoxA")
+	var box: CharacterBody2D = game.get_node("View/World/BoxA")
 	var player: CharacterBody2D = game.player
 	player.position.x = box.position.x - 60
 	Events.hold_key(KEY_RIGHT, true)
