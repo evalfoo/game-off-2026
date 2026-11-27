@@ -23,6 +23,9 @@ extends Camera2D
 const Player := preload("res://game/player.gd")
 const Plank := preload("res://game/seesaw_plank.gd")
 const FALL_TOLERANCE := 0.01
+# How far below its standing height the player can be and still count as on
+# that floor. A fall's first step drops it about 0.27 px.
+const STAND_TOLERANCE := 0.1
 
 # The camera window, smoothing and look-ahead each have a small and a big
 # value, and blend between them as the player grows, by the player's t.
@@ -110,13 +113,10 @@ func _physics_process(delta: float) -> void:
 	var standing := target.is_on_floor() and not _on_plank()
 	var floor_y := _inside_limits(target.position.y - feet_below_centre)
 	# Looking up on a floor puts the feet below the view's centre by that much
-	# more on purpose, and a jump holds the view there. A fall from the standing
-	# height or lower is not looking, so it gets no such room. Both come from
-	# the step before, as a landing's step finds the view far from the floor.
-	var looked_up := _lift if target.position.y <= _stand_y + 0.5 else 0.0
-	if standing:
-		_lift = maxf(floor_y - centre_y, 0.0)
-		_stand_y = target.position.y
+	# more on purpose, and a jump holds the view there. Any drop below the
+	# standing height is a fall, not looking, so it gets no such room. Both come
+	# from the step before, as a landing's step finds the view far from the floor.
+	var looked_up := _lift if target.position.y <= _stand_y + STAND_TOLERANCE else 0.0
 	# Checked before the floor, as the step a fall lands can drop the feet
 	# well past the line, and easing toward the standing height would trail.
 	# The view's position can come back a hair off the line after a fall, and
@@ -128,12 +128,19 @@ func _physics_process(delta: float) -> void:
 		var wanted := _inside_limits(target.position.y - window_bottom)
 		position.y = centre_y + (wanted - centre_y) / share
 	elif standing:
-		position.y = _look(floor_y)
+		# Clamped after the look, so a look from a floor near the room's edge
+		# doesn't move the view off the edge.
+		position.y = _inside_limits(_look(target.position.y - feet_below_centre))
 	else:
 		# Holds the height the view shows now, so a jump taken while it is still
 		# easing toward the last landing doesn't carry it on.
 		position.y = centre_y
 	force_update_scroll()
+	# Measured from where this step put the view, so the next step's fall check
+	# allows for the look it made.
+	if standing:
+		_lift = maxf(floor_y - (get_screen_center_position().y - offset.y), 0.0)
+		_stand_y = target.position.y
 	# Zero-length steps, while the play driver stops time, leave the shake and
 	# the seed's sequence alone.
 	if delta > 0.0 and (_shake_length > 0.0 or offset != Vector2.ZERO):
