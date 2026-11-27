@@ -21,8 +21,7 @@ A sidescroller platformer with some puzzle elements that depend on the player si
   - The camera treats the platforms as normal floor.
   - The pair is a scene that the owner places in the editor.
   - The seesaw room becomes a minimal grey-box platforms room, made in the
-    editor: the smallest room that shows the mechanic. The player must be able
-    to get onto a platform at either size.
+    editor: the smallest room that shows the mechanic.
 - Pushing things.
 - Fitting through things.
 - Timing: the player triggers something while large and uses speed to get

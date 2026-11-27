@@ -4,8 +4,9 @@ extends "res://tests/lib/test.gd"
 # with the floor over a pit.
 #
 # Played: the small player walks onto the left platform and moves nothing.
-# Growing there sinks it to its stop while the right one rises as far, and
-# shrinking brings both back to level. The platform carries the player all the
+# While it grows the pair stays level. Fully big, it sinks the platform to its
+# stop while the right one rises as far, and shrinking brings both back to
+# level. The platform carries the player all the
 # way, and the pair moves one way only. The big player walks onto the left
 # platform from the floor: half on the floor it stands on the floor, and wholly
 # on the platform it sinks it, also pressed against the pit's wall.
@@ -25,6 +26,7 @@ var floor_y := 0.0
 func run() -> void:
 	_load_room()
 	var travel: float = pair.travel
+	check(travel == 48.0, "the room's pair has the default travel of three tiles, 48 px: %.1f" % travel)
 	var left: Node2D = pair.left
 	var right: Node2D = pair.right
 
@@ -40,8 +42,18 @@ func run() -> void:
 	check(_on(left) and pair.offset == 0.0,
 		"the small player walks onto the left platform and it stays level: feet %s, offset %.2f" % [player.position, pair.offset])
 
-	# Growing there sinks it, and the player with it.
+	# Growing there sinks it once fully big, and the player with it.
 	Events.hold_key(KEY_SHIFT, true)
+	var growing := 0
+	var moved_early := 0
+	while player.t < 1.0 and growing < 120:
+		await physics(1)
+		if player.t < 1.0:
+			growing += 1
+			if pair.offset != 0.0:
+				moved_early += 1
+	check(growing > 10 and moved_early == 0,
+		"while the player grows, 0 < t < 1, the pair stays level: %d of %d steps moved" % [moved_early, growing])
 	var ride := await _track(left, 180)
 	check(ride.one_way and ride.carried,
 		"growing, the left platform sinks only downward and carries the player: %s" % ride)

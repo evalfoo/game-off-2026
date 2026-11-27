@@ -12,14 +12,16 @@ extends Node2D
 
 const LinkedPlatform := preload("res://game/linked_platform.gd")
 
-# How far each platform moves from level to its stop, in px.
-@export var travel := 48.0
+# How far each platform moves from level to its stop, in px. The Inspector
+# keeps it and the speeds at 0 or more: a negative one would turn the pair
+# around or push it on past its stops.
+@export_range(0.0, 96.0, 1.0, "or_greater", "suffix:px") var travel := 48.0
 # How fast a platform sinks under the big player, and the other rises, in px
 # per second. Placeholder.
-@export var sink_speed := 60.0
+@export_range(0.0, 120.0, 1.0, "or_greater", "suffix:px/s") var sink_speed := 60.0
 # How fast both slide back to level once the big player leaves or shrinks, in
 # px per second. Placeholder.
-@export var return_speed := 40.0
+@export_range(0.0, 120.0, 1.0, "or_greater", "suffix:px/s") var return_speed := 40.0
 
 # How far Left sits below level. Right sits as far above it.
 var offset := 0.0
