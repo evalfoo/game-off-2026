@@ -25,13 +25,13 @@ const Player := preload("res://game/player.gd")
 @export var smoothing_speed := 5.0
 # How far in front of the player the look-ahead point sits: a quarter of the
 # view's width when small, less when big, as the big player walks slower. Less
-# the window's half width, it is how far the player trails the view's centre
-# while walking: 48 px small, 16 px big.
+# the window's half width, it is how far ahead of the player the view's centre
+# settles once they stop after walking: 48 px small, 16 px big.
 @export var small_look_ahead := 80.0
 @export var big_look_ahead := 48.0
 # How far the player walks back from the furthest point they reached before
-# the look-ahead point changes sides. Under the window's width, so a turn
-# shorter than this leaves the view still.
+# the look-ahead point changes sides. A shorter turn keeps the point on its
+# side.
 @export var flip_distance := 32.0
 
 var target: Player
@@ -77,7 +77,7 @@ func _look_ahead_x() -> float:
 	var x := target.position.x
 	if (x - _furthest) * side >= 0.0:
 		_furthest = x
-	elif (_furthest - x) * side > flip_distance:
+	elif (_furthest - x) * side >= flip_distance:
 		side = -side
 		_furthest = x
 	return x + side * lerpf(small_look_ahead, big_look_ahead, target.t)

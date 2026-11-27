@@ -72,7 +72,7 @@ func _check_size(big: bool) -> void:
 		"%s: a short turn back %.1f px leaves the look-ahead point right and the view: %.1f -> %.1f" % [label, turned_at - player.position.x, held, _centre().x])
 	# On left: the point flips once the player is flip_distance back.
 	var flipped_at := await _walk_until_flip(label, KEY_LEFT, turned_at - 3.0 * margin)
-	check(turned_at - flipped_at > flip and turned_at - flipped_at < flip + 3.0,
+	check(turned_at - flipped_at >= flip and turned_at - flipped_at < flip + 3.0,
 		"%s: walking on left, the look-ahead point flips %.1f px back from where the player turned" % [label, turned_at - flipped_at])
 	await _walk(KEY_LEFT, func() -> bool: return player.position.x <= turned_at - 4.0 * margin)
 	await physics(120)
@@ -87,7 +87,7 @@ func _check_size(big: bool) -> void:
 	check(camera.side == -1.0 and absf(_centre().x - held) < 0.5,
 		"%s: a short turn right %.1f px leaves the look-ahead point left and the view: %.1f -> %.1f" % [label, player.position.x - turned_at, held, _centre().x])
 	flipped_at = await _walk_until_flip(label, KEY_RIGHT, turned_at + 3.0 * margin)
-	check(flipped_at - turned_at > flip and flipped_at - turned_at < flip + 3.0,
+	check(flipped_at - turned_at >= flip and flipped_at - turned_at < flip + 3.0,
 		"%s: walking on right, the look-ahead point flips back %.1f px from where the player turned" % [label, flipped_at - turned_at])
 
 	# Jump in place: the height holds.
@@ -134,6 +134,18 @@ func _check_size(big: bool) -> void:
 	await physics(120)
 	check(camera.side == -1.0 and absf(_centre().x - (player.position.x - ahead + margin)) < 0.5,
 		"%s: walking back from the wall, the view follows the look-ahead point: player x %.1f, view x %.1f" % [label, player.position.x, _centre().x])
+	# Staged at whole-pixel positions, so the distances are exact: the player,
+	# standing with the point left, is moved to x 600 and then right. Just short
+	# of flip_distance the point stays left; exactly on it, it flips.
+	player.position.x = 600.0
+	await physics(2)
+	player.position.x = 600.0 + flip - 0.01
+	await physics(2)
+	var short_side: float = camera.side
+	player.position.x = 600.0 + flip
+	await physics(2)
+	check(short_side == -1.0 and camera.side == 1.0,
+		"%s: standing %.2f px back keeps the point left, %.2f px back flips it: side %d, then %d" % [label, flip - 0.01, flip, short_side, camera.side])
 
 	check(outside == 0, "%s: the view stays inside the room every frame: %d frames outside" % [label, outside])
 	if big:
