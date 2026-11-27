@@ -37,7 +37,7 @@ func run() -> void:
 	var button := _first(InputEventJoypadButton) as InputEventJoypadButton
 	check(button != null and button.button_index == JOY_BUTTON_A and button.pressed, "joy_button sends the button down")
 	var motions := seen.filter(func(event: InputEvent) -> bool: return event is InputEventMouseMotion)
-	check(motions.size() == 2 and (motions[0] as InputEventMouseMotion).relative == Vector2(12, -4), "mouse_motion sends relative motion")
+	check(motions.size() == 2 and (motions[0] as InputEventMouseMotion).screen_relative == Vector2(12, -4), "mouse_motion sends relative motion")
 	check(motions.size() == 2 and (motions[1] as InputEventMouseMotion).button_mask == MOUSE_BUTTON_MASK_RIGHT, "a move with buttons down carries their mask")
 	Events.joy_button(0, JOY_BUTTON_A, false)
 	Events.mouse_button(Vector2(50, 40), MOUSE_BUTTON_RIGHT, false)

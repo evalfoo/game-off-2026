@@ -4,7 +4,7 @@ extends "res://tests/lib/test.gd"
 
 func run() -> void:
 	var small := await _jump_height(false)
-	check(small > 110.0, "the small player jumps about 120 px: %.1f" % small)
+	check(small > 36.0, "the small player jumps about 40 px: %.1f" % small)
 	var big := await _jump_height(true)
 	var ratio := big / small
 	check(ratio > 0.45 and ratio < 0.55, "the big player jumps half as high: %.1f px, %.2f of small" % [big, ratio])

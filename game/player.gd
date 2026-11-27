@@ -8,20 +8,20 @@ extends CharacterBody2D
 # pushes the boxes it walks into (game/box.gd) and weighs down the seesaw plank
 # it stands on (game/seesaw_plank.gd).
 
-@export var small_size := Vector2(32, 48)
-@export var big_size := Vector2(96, 144)
+@export var small_size := Vector2(10, 16)
+@export var big_size := Vector2(30, 48)
 @export var small_mass := 1.0
 @export var big_mass := 10.0
-@export var small_speed := 300.0
-@export var big_speed := 100.0
+@export var small_speed := 100.0
+@export var big_speed := 100.0 / 3.0
 @export var transition_time := 0.4
 # Seconds to reach full speed from standing, and to stop or turn from full
 # speed.
 @export var accel_time := 0.1
 @export var decel_time := 0.05
-@export var small_jump_speed := 500.0
+@export var small_jump_speed := 167.0
 # Half the small jump's height: the height goes with the speed squared.
-@export var big_jump_speed := 354.0
+@export var big_jump_speed := 118.0
 # Falling pulls harder than rising, and rising with jump let go harder still,
 # so a short press makes a short jump.
 @export var fall_gravity_scale := 2.0
@@ -40,6 +40,8 @@ var speed := small_speed
 var jump_speed := small_jump_speed
 var shape := RectangleShape2D.new()
 var collision := CollisionShape2D.new()
+# Drawn at small_size. Growing stretches it.
+var sprite := Sprite2D.new()
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 var _coyote := 0.0
 var _jump_buffer := 0.0
@@ -49,6 +51,9 @@ func _ready() -> void:
 	floor_stop_on_slope = true
 	collision.shape = shape
 	add_child(collision)
+	sprite.texture = preload("res://art/player.png")
+	sprite.centered = false
+	add_child(sprite)
 	_apply_size()
 
 
@@ -91,10 +96,11 @@ func _apply_size() -> void:
 	var size := small_size.lerp(big_size, t)
 	shape.size = size
 	collision.position = Vector2(0, -size.y / 2)
+	sprite.scale = size / sprite.texture.get_size()
+	sprite.position = Vector2(-size.x / 2, -size.y)
 	mass = lerpf(small_mass, big_mass, t)
 	speed = lerpf(small_speed, big_speed, t)
 	jump_speed = lerpf(small_jump_speed, big_jump_speed, t)
-	queue_redraw()
 
 
 # Moves the box in the way first, if the player is heavy enough, so the
@@ -117,8 +123,3 @@ func _carry() -> void:
 	var body := hit.get_collider()
 	if body.has_method("carry"):
 		body.call("carry", mass, global_position.x)
-
-
-func _draw() -> void:
-	var size := shape.size
-	draw_rect(Rect2(-size.x / 2, -size.y, size.x, size.y), Color.WHITE)

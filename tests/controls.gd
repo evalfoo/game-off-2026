@@ -22,7 +22,7 @@ func _speed() -> void:
 	Events.hold_key(KEY_RIGHT, false)
 	await physics(4)
 	var stopped := player.velocity.x
-	check(is_equal_approx(running, 300.0), "it reaches full speed in 8 frames: %.1f" % running)
+	check(is_equal_approx(running, player.small_speed), "it reaches full speed in 8 frames: %.1f" % running)
 	check(stopped == 0.0, "it stops 4 frames after letting go: %.1f" % stopped)
 	await _end(game)
 
@@ -38,7 +38,7 @@ func _jump_cut() -> void:
 	for i: int in 60:
 		await physics_frame
 		top = minf(top, player.position.y)
-	check(start - top > 20.0 and start - top < 60.0, "a one-frame press jumps under half as high as a held one: %.1f px" % (start - top))
+	check(start - top > 7.0 and start - top < 20.0, "a one-frame press jumps under half as high as a held one: %.1f px" % (start - top))
 	await _end(game)
 
 func _fall() -> void:
@@ -68,7 +68,7 @@ func _jump_off_edge(frames: int) -> bool:
 	var game := Fixture.launch(root)
 	var player: CharacterBody2D = game.player
 	var box: CharacterBody2D = game.get_node("BoxB")
-	player.position = box.position + Vector2(0, -40)
+	player.position = box.position + Vector2(0, -16)
 	await physics(10)
 	Events.hold_key(KEY_RIGHT, true)
 	for i: int in 60:
@@ -96,7 +96,7 @@ func _press_before_landing(frames: int) -> bool:
 	await physics(10)
 	var floor_y := player.position.y
 	# Lands about 18 frames after the drop.
-	player.position.y = floor_y - 80.0
+	player.position.y = floor_y - 27.0
 	await physics(18 - frames)
 	Events.hold_key(KEY_SPACE, true)
 	var jumped := false
