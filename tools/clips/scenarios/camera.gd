@@ -1,9 +1,9 @@
 extends "res://tools/clips/scenario.gd"
 
 # The camera in the wide room: the player walks right, turns and walks back
-# inside the camera window, jumps in place, then walks onto the step with a
-# jump. Pass -- --big to hold Shift throughout. The room is new, so record one
-# ref:
+# inside the camera window, jumps in place, walks onto the step with a jump,
+# and jumps again as it lands. Pass -- --big to hold Shift throughout. The
+# room is new, so record one ref:
 #
 #   tools/clips/record.sh tools/clips/scenarios/camera.gd HEAD [-- --big]
 
@@ -21,7 +21,7 @@ func run() -> void:
 	var walk := 3.0 if big else 1.6
 	# The big player walks a third as fast, so its clip runs about twice as long.
 	var seconds := 15.0 if big else 8.0
-	strip(roundi(seconds * FPS / 8.0), "walk right, turn, jump, walk onto the step")
+	strip(roundi(seconds * FPS / 8.0), "walk right, turn, jump, jump onto the step and again")
 	mark("walk right")
 	Events.hold_key(KEY_RIGHT, true)
 	await hold(walk)
@@ -44,8 +44,13 @@ func run() -> void:
 	Events.hold_key(KEY_SPACE, true)
 	await hold(0.3)
 	Events.hold_key(KEY_SPACE, false)
-	await hold(0.8 if big else 0.5)
 	Events.hold_key(KEY_RIGHT, false)
-	await hold(1.5)
+	while not player.is_on_floor():
+		await hold(1.0 / FPS)
+	mark("jump again on landing")
+	Events.hold_key(KEY_SPACE, true)
+	await hold(0.3)
+	Events.hold_key(KEY_SPACE, false)
+	await hold(2.0)
 	Events.hold_key(KEY_SHIFT, false)
 	finish()

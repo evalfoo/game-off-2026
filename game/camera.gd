@@ -5,7 +5,8 @@ extends Camera2D
 # player walks inside it and scrolls when they push against its edge; position
 # smoothing glides toward the target; limits keep the room's edges on screen.
 # This script adds the one rule Camera2D lacks: the height follows the player
-# only when they stand on a floor, so a jump doesn't move the view.
+# only when they stand on a floor, and holds still while they are in the air,
+# so a jump doesn't move the view.
 #
 # The room sets target and the limits before adding it, after the player, so
 # each physics step it follows where the player has just moved.
@@ -28,6 +29,10 @@ func _ready() -> void:
 	drag_right_margin = window_margin
 	position_smoothing_enabled = true
 	position_smoothing_speed = smoothing_speed
+	# Camera2D updates the view in its own physics step, which runs before this
+	# script's, so the view would always trail the target set here by a step.
+	# _physics_process updates it instead, once, after setting the target.
+	set_physics_process_internal(false)
 	position = target.position - Vector2(0, feet_below_centre)
 	# Centres the view on the player now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
@@ -41,3 +46,8 @@ func _physics_process(_delta: float) -> void:
 	position.x = target.position.x
 	if target.is_on_floor():
 		position.y = target.position.y - feet_below_centre
+	else:
+		# Holds the height the view shows now, so a jump taken while it is still
+		# easing toward the last landing doesn't carry it on.
+		position.y = get_screen_center_position().y
+	force_update_scroll()

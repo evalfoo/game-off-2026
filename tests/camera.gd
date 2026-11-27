@@ -39,8 +39,13 @@ func _check_size(big: bool) -> void:
 		Events.hold_key(KEY_SHIFT, true)
 		await physics(40)
 
-	# Walk right past the window's right edge.
+	# Walk right past the window's right edge. While walking, the view eases
+	# after the window's edge rather than keeping up with it.
+	var start_x := _centre().x
 	await _walk(KEY_RIGHT, func() -> bool: return player.position.x >= 300.0)
+	var lag := player.position.x - margin - _centre().x
+	check(_centre().x > start_x + 1.0 and lag > 2.0,
+		"%s: walking right, the view follows but trails the window's edge: view x %.1f -> %.1f, %.1f px behind" % [label, start_x, _centre().x, lag])
 	await physics(90)
 	check(absf(_centre().x - (player.position.x - margin)) < 0.5,
 		"%s: walking right, the player ends at the window's right edge: player x %.1f, view x %.1f" % [label, player.position.x, _centre().x])
@@ -77,6 +82,14 @@ func _check_size(big: bool) -> void:
 	Events.hold_key(KEY_RIGHT, false)
 	check(absf(player.position.y - step_y) < 0.5 and climb.moved < 0.5,
 		"%s: jumping onto the step lands at y %.1f with the view moved %.1f px in the air" % [label, player.position.y, climb.moved])
+	# Jump again one step after landing, while the view is still easing up to
+	# the step's height: it holds where it is until the player lands again.
+	await physics(1)
+	Events.hold_key(KEY_SPACE, true)
+	var again := await _air_time()
+	Events.hold_key(KEY_SPACE, false)
+	check(absf(player.position.y - step_y) < 0.5 and again.rise > 15.0 and again.moved < 0.5,
+		"%s: jumping again right after landing rises %.1f px and moves the view %.1f px in the air" % [label, again.rise, again.moved])
 	await physics(120)
 	check(absf(_centre().y - (step_y - feet_below)) < 0.5,
 		"%s: after landing on the step the view rises with it: %.1f -> %.1f" % [label, floor_view_y, _centre().y])
@@ -112,17 +125,23 @@ func _walk(key: Key, done: Callable, keep := false) -> void:
 
 
 # Waits for the player to leave the floor and land again. Returns how far the
-# feet rose and how far the view's height moved while in the air.
+# feet rose, and how far the view's height moved between the last frame on the
+# floor and the landing. Before takeoff the view may still be easing.
 func _air_time() -> Dictionary:
 	var start_y := player.position.y
 	var view_y := _centre().y
 	var top := start_y
 	var moved := 0.0
+	var left := false
 	for i: int in 300:
 		await physics(1)
 		top = minf(top, player.position.y)
-		if player.is_on_floor() and i > 2:
-			break
+		if player.is_on_floor():
+			if left:
+				break
+			view_y = _centre().y
+			continue
+		left = true
 		moved = maxf(moved, absf(_centre().y - view_y))
 	return {"rise": start_y - top, "moved": moved}
 
