@@ -31,7 +31,7 @@ func _check_size(big: bool) -> void:
 	player = room.player
 	camera = room.camera
 	var feet_below: float = camera.feet_below_centre
-	var margin: float = camera.window_margin * HALF_VIEW.x
+	var margin: float = (camera.big_window_margin if big else camera.small_window_margin) * HALF_VIEW.x
 	var floor_y: float = room.FLOOR_Y
 	var size: Vector2 = room.SIZE
 	var small_ahead: float = camera.small_look_ahead
