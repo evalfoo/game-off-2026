@@ -10,6 +10,6 @@ A sidescroller platformer with some puzzle elements that depend on the player si
 - Timing: the player triggers something while large and uses speed to get
   somewhere before a door closes etc.
 
-## Open
+## Grey-box order
 
-- Which puzzle to grey-box first.
+- The seesaw first.
