@@ -34,7 +34,7 @@ The wide room is the first room made in the editor; `game/main.tscn` and the see
 - Paint the floor, walls and platforms on the `Tiles` node, a `TileMapLayer` with `art/tiles.tres`. The walls go in the column just outside each side of the room.
 - The `PlayerStart` marker is where the player's feet start.
 - The camera's limits are the painted tiles' bounds less the wall column on each side; the top and bottom are the painted bounds.
-- The pixel view makes its world, a `SubViewport`, in code, so the scene has no world to put the level in. The level's nodes sit under the room's root, where the editor shows them, and the room script moves `Tiles` into `view.world` at startup, keeping its local position. The player, camera and readout are made in code.
+- The pixel view makes its world, a `SubViewport`, in code, so the scene has no world to put the level in. The level's nodes sit under the room's root, where the editor shows them, and the room script moves `Tiles` into `view.world` at startup, keeping its local position. The script makes the player, camera and readout in code.
 
 ## Persistence
 
