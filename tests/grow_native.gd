@@ -9,10 +9,10 @@ func run() -> void:
 	var player: CharacterBody2D = game.player
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(40)
-	check(player.shape.size == player.big_size, "holding Shift grows the player: %s" % player.shape.size)
+	check(player.size == player.big_size, "holding Shift grows the player: %s" % player.size)
 	Events.hold_key(KEY_SHIFT, false)
 	await physics(40)
-	check(player.shape.size == player.small_size, "letting go shrinks it: %s" % player.shape.size)
+	check(player.size == player.small_size, "letting go shrinks it: %s" % player.size)
 
 func physics(count: int) -> void:
 	for i: int in count:

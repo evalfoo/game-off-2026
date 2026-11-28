@@ -24,6 +24,22 @@ A sidescroller platformer with some puzzle elements that depend on the player si
     editor: the smallest level that shows the mechanic.
 - Pushing things.
 - Fitting through things.
+  - The things are gaps in the tiles: tunnels, low ceilings, narrow shafts.
+  - Only the small player fits. Big is blocked.
+  - Openings are whole tiles. A 1-tile-tall tunnel is the small-only opening.
+    Big needs 2 tiles wide by 3 tall.
+  - It applies to the player only. Boxes come later.
+  - Growing with no room:
+    - Holding Shift where big doesn't fit keeps the player small. There's no
+      cue for now.
+    - Big must fit exactly where the player stands. The player doesn't slide
+      sideways to make room.
+    - With Shift still held, the player grows as soon as big fits, for example
+      on walking out of a tunnel.
+  - Grey-box level:
+    - It's a new minimal level made in the editor: a floor and a wall with a
+      1-tile-tall tunnel at floor level, with the player starting on one side.
+    - The camera behaves normally in the tunnel.
 - Timing: the player triggers something while large and uses speed to get
   somewhere before a door closes etc.
 

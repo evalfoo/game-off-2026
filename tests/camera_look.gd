@@ -178,7 +178,7 @@ func _check_walk_off_looking_up() -> void:
 		airborne += 1
 		var feet := player.position.y - _centre_y()
 		lowest = maxf(lowest, feet)
-		if feet > HALF_VIEW.y or feet - player.shape.size.y < -HALF_VIEW.y:
+		if feet > HALF_VIEW.y or feet - player.size.y < -HALF_VIEW.y:
 			off_screen += 1
 	Events.hold_key(KEY_RIGHT, false)
 	Events.hold_key(KEY_UP, false)

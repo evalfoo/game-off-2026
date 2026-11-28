@@ -74,6 +74,6 @@ func _process(_delta: float) -> void:
 
 
 func _refresh_readout() -> void:
-	var size := player.shape.size
+	var size := player.size
 	readout.text = "Arrows: move   Space: jump   Shift: hold\nsize: %d x %d\nmass: %.1f\nspeed: %d" % [
 		size.x, size.y, player.mass, player.speed]
