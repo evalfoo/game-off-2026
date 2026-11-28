@@ -20,7 +20,7 @@ func run() -> void:
 	Events.hold_key(KEY_SHIFT, true)
 	await hold(0.5)
 	Events.hold_key(KEY_RIGHT, true)
-	await hold(2.0)
+	await hold(3.5)
 	mark("let go of Shift")
 	Events.hold_key(KEY_SHIFT, false)
 	var player: Node2D = game.player
