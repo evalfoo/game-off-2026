@@ -1,6 +1,6 @@
 extends Node2D
 
-# Renders a room's world at 320x180 game pixels into its own image, with one
+# Renders a level's world at 320x180 game pixels into its own image, with one
 # pixel to spare on each side, and draws that image at the window's scale,
 # shifted by the camera's leftover fraction of a game pixel. The world moves in
 # whole game pixels, so its art stays on the pixel grid, while the picture moves
@@ -8,8 +8,8 @@ extends Node2D
 # the camera's ease doesn't step a whole game pixel at a time.
 #
 # The window stretches its canvas to the screen (stretch/mode="canvas_items"),
-# so the image can sit between game pixels. A room adds its world, with its
-# camera, to `world`. What the room adds to itself after this node, such as its
+# so the image can sit between game pixels. A level adds its world, with its
+# camera, to `world`. What the level adds to itself after this node, such as its
 # readout, draws above the image and holds still while the camera moves.
 #
 # follow() shows a label above a body in the world from the window's viewport

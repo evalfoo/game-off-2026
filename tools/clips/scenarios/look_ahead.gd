@@ -1,17 +1,17 @@
 extends "res://tools/clips/scenario.gd"
 
-# The camera's look-ahead in the wide room: the player walks right, turns back
+# The camera's look-ahead in the wide level: the player walks right, turns back
 # a little and walks on, then turns back further and walks left. Pass -- --big
-# to hold Shift throughout. The wide room is on both refs, so record both:
+# to hold Shift throughout. The wide level is on both refs, so record both:
 #
 #   tools/clips/record.sh tools/clips/scenarios/look_ahead.gd [-- --big]
 
 func run() -> void:
 	var big := "--big" in OS.get_cmdline_user_args()
 	game.free()
-	game = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	game = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
 	root.add_child(game)
-	fixture("the wide room, %s player" % ("big" if big else "small"))
+	fixture("the wide level, %s player" % ("big" if big else "small"))
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
 		await hold(0.6)

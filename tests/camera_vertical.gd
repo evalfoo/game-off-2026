@@ -1,17 +1,17 @@
 extends "res://tests/lib/test.gd"
 
-# The camera's height in a fall. Staged: no room has a drop taller than one
-# tile, so this test adds a high ledge to the wide room.
+# The camera's height in a fall. Staged: no level has a drop taller than one
+# tile, so this test adds a high ledge to the wide level.
 #
 # A fall: at both sizes, the player walks off a ledge 112 px above the wide
-# room's floor, and off one 640 px above it with the camera's top limit open.
+# level's floor, and off one 640 px above it with the camera's top limit open.
 # Every physics frame of the fall, the landing's included, the whole player
 # stays inside the view and the feet no lower than the camera window's bottom
 # edge, and after landing the view settles on the floor's height. The 640 px
 # fall runs once more with the window's bottom edge at a fractional 79.6 px.
 #
-# A start in the air: the room's camera is swapped for one added while the
-# player is in the air near the room's top. Falling to the floor keeps the
+# A start in the air: the level's camera is swapped for one added while the
+# player is in the air near the level's top. Falling to the floor keeps the
 # feet on or above the window's bottom edge, also with smoothing off
 # (smoothing_speed 0).
 
@@ -39,16 +39,16 @@ func run() -> void:
 
 
 func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
-	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	Tiles.platform(room.view.world.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
-	var player: CharacterBody2D = room.player
-	camera = room.camera
-	var floor_y: float = room.FLOOR_Y
+	var level: Node2D = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
+	root.add_child(level)
+	Tiles.platform(level.view.world.get_node("Tiles"), ledge_row, LEDGE_FIRST, LEDGE_LAST)
+	var player: CharacterBody2D = level.player
+	camera = level.camera
+	var floor_y: float = level.FLOOR_Y
 	var ledge_y := float(ledge_row * Tiles.TILE)
 	var label := "%s, %d px drop, window bottom %.1f" % ["big" if big else "small", floor_y - ledge_y, bottom_edge]
 	camera.set("window_bottom", bottom_edge)
-	# Above the room: the top limit opens so the view can show the ledge.
+	# Above the level: the top limit opens so the view can show the ledge.
 	if ledge_y < 0.0:
 		camera.limit_top = -10000000
 	player.position = Vector2((LEDGE_FIRST + 3) * Tiles.TILE, ledge_y)
@@ -91,17 +91,17 @@ func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
 	check(absf(_centre().y - (floor_y - feet_below)) < 0.5,
 		"%s: after landing the view settles %d px above the feet: %.1f" % [label, feet_below, _centre().y])
 	Events.hold_key(KEY_SHIFT, false)
-	room.free()
+	level.free()
 	await physics_frame
 	await physics_frame
 
 
 func _check_start_in_air(smoothing: float) -> void:
-	var room: Node2D = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	var player: CharacterBody2D = room.player
-	var size: Vector2 = room.SIZE
-	room.camera.free()
+	var level: Node2D = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
+	root.add_child(level)
+	var player: CharacterBody2D = level.player
+	var size: Vector2 = level.SIZE
+	level.camera.free()
 	player.position = Vector2(120, 64)
 	camera = PlayerCamera.new()
 	camera.target = player
@@ -111,7 +111,7 @@ func _check_start_in_air(smoothing: float) -> void:
 	camera.limit_bottom = int(size.y)
 	camera.small_smoothing_speed = smoothing
 	camera.big_smoothing_speed = smoothing
-	room.view.world.add_child(camera)
+	level.view.world.add_child(camera)
 	var lowest := -INF
 	for i: int in 300:
 		await physics(1)
@@ -121,7 +121,7 @@ func _check_start_in_air(smoothing: float) -> void:
 	var bottom: Variant = camera.get("window_bottom")
 	check(player.is_on_floor() and bottom != null and lowest <= float(bottom) + 0.5,
 		"smoothing speed %.0f: starting in the air at y 64, the feet fall no lower than the window's bottom edge, %s px below the view's centre: at most %.1f" % [smoothing, bottom, lowest])
-	room.free()
+	level.free()
 	await physics_frame
 	await physics_frame
 

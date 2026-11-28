@@ -1,13 +1,14 @@
 extends Node2D
 
-# A grey-box room three views wide and taller than one, for the camera
+# A grey-box level three views wide and taller than one, for the camera
 # (game/camera.gd) to scroll along. A one-tile step, which both sizes can jump
 # onto, changes the height the player stands at. Open it with
-# res://game/rooms/wide.tscn; the game still starts in game/main.tscn.
+# res://game/levels/wide.tscn; the game still starts in the main
+# level, game/main.tscn.
 #
 # The scene holds the level: its tiles, painted on Tiles, and the player's
 # start, PlayerStart. The pixel view makes its world in code, so they sit
-# under the room's root, where the editor shows them, and this script moves the
+# under the level's root, where the editor shows them, and this script moves the
 # tiles into the world at startup. The camera's limits are the painted tiles'
 # bounds less the wall column on each side.
 
@@ -20,7 +21,7 @@ const PixelView := preload("res://game/pixel_view.gd")
 const COLUMNS := 60
 const ROWS := 18
 const SIZE := Vector2(COLUMNS * Tiles.TILE, ROWS * Tiles.TILE)
-# The floor's top edge, two tile rows above the room's bottom.
+# The floor's top edge, two tile rows above the level's bottom.
 const FLOOR_Y := SIZE.y - 2 * Tiles.TILE
 # The step: a platform one tile above the floor, ending at column STEP_LAST.
 const STEP_ROW := ROWS - 3

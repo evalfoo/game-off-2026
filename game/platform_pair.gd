@@ -5,7 +5,7 @@ extends Node2D
 # one platform, it sinks to its stop, travel below level, and the other rises
 # as far. Otherwise both slide back to level. The small player moves nothing.
 #
-# Place game/platform_pair.tscn in a room. Left and Right are level where the
+# Place game/platform_pair.tscn in a level. Left and Right are level where the
 # scene puts them. The wheels and ropes are placeholder art and don't collide;
 # each rope runs from its wheel's centre to its platform, wherever the wheels
 # are placed.

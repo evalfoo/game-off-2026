@@ -1,7 +1,7 @@
 extends Camera2D
 
-# Follows the player in a room wider than the view. Camera2D does part of it:
-# position smoothing glides toward the target; limits keep the room's edges on
+# Follows the player in a level wider than the view. Camera2D does part of it:
+# position smoothing glides toward the target; limits keep the level's edges on
 # screen. The script keeps the camera window, which holds the view still while
 # the player walks inside it and scrolls when they push against its edge. It
 # keeps it rather than using Camera2D's drag margins, so a pull moves the view
@@ -16,10 +16,10 @@ extends Camera2D
 # Holding Up or Down looks that way by look_distance, eased by the same
 # smoothing, while the player stands on a floor. shake() shakes the view
 # through Camera2D's offset, which the follow rules ignore.
-# Objects the room marks with pull_toward draw the view partway toward them
+# Objects the level marks with pull_toward draw the view partway toward them
 # while the player is near.
 #
-# The room sets target and the limits before adding it, after the player, so
+# The level sets target and the limits before adding it, after the player, so
 # each physics step it follows where the player has just moved.
 
 const Player := preload("res://game/player.gd")
@@ -36,7 +36,7 @@ const STAND_TOLERANCE := 0.1
 @export var small_window_margin := 0.2
 @export var big_window_margin := 0.2
 # How far above the player's feet the view's centre sits, so standing feet show
-# at y 160 of the 180 view, as in the one-screen rooms.
+# at y 160 of the 180 view, as in the one-screen levels.
 @export var feet_below_centre := 70.0
 @export var small_smoothing_speed := 5.0
 @export var big_smoothing_speed := 5.0
@@ -70,8 +70,8 @@ var _pulls: Array[Pull] = []
 # feet's height there; see _physics_process.
 var _lift := 0.0
 var _stand_y := 0.0
-# Seeds the shake's directions, so a run replays the same. The room sets it
-# before adding the camera; the wide room keeps 0.
+# Seeds the shake's directions, so a run replays the same. The level sets it
+# before adding the camera; the wide level keeps 0.
 var rng_seed := 0
 var _rng := RandomNumberGenerator.new()
 # The current shake: its strength in px, its length in seconds and how long it
@@ -106,7 +106,7 @@ func _ready() -> void:
 		position.y = start.y
 	# Centres the view on the look-ahead point now. Camera2D's own first update ran as it
 	# entered the tree, before this position, so until the next physics step
-	# the view would sit at the room's top-left corner.
+	# the view would sit at the level's top-left corner.
 	align()
 	reset_smoothing()
 	force_update_scroll()
@@ -127,7 +127,7 @@ func _physics_process(delta: float) -> void:
 	var half_window := drag_right_margin * get_viewport_rect().size.x * 0.5 / zoom.x
 	var ahead := _look_ahead_x()
 	_window_x = clampf(_window_x, ahead - half_window, ahead + half_window)
-	# The height a pull moves from: the look and the room's limits first.
+	# The height a pull moves from: the look and the level's limits first.
 	var floor_y := _inside_limits(target.position.y - feet_below_centre)
 	var pulled := _pulled(Vector2(_window_x, floor_y))
 	position.x = pulled.x
@@ -151,7 +151,7 @@ func _physics_process(delta: float) -> void:
 		var wanted := _inside_limits(target.position.y - window_bottom)
 		position.y = centre_y + (wanted - centre_y) / share
 	elif standing:
-		# Clamped after the look, so a look from a floor near the room's edge
+		# Clamped after the look, so a look from a floor near the level's edge
 		# doesn't move the view off the edge.
 		position.y = _pulled(Vector2(_window_x, _inside_limits(_look(target.position.y - feet_below_centre)))).y
 	else:
@@ -170,7 +170,7 @@ func _physics_process(delta: float) -> void:
 		_shake_step(delta)
 
 
-# The height `y` moved by Up or Down, but not past the room's edge, where the
+# The height `y` moved by Up or Down, but not past the level's edge, where the
 # smoothing would carry on behind the limit and hold the view there for a while
 # after the key is let go.
 func _look(y: float) -> float:
@@ -192,7 +192,7 @@ func _shake_step(delta: float) -> void:
 	else:
 		_shake_length = 0.0
 	# Camera2D adds offset after its limits, so the shake is kept inside them
-	# here: each axis gives up what would pass the room's edge.
+	# here: each axis gives up what would pass the level's edge.
 	var base := get_screen_center_position() - offset
 	var half := get_viewport_rect().size / 2.0 / zoom
 	var low := Vector2(limit_left, limit_top) + half
@@ -259,13 +259,13 @@ func pull_toward(node: Node2D, inner_radius: float, outer_radius: float, share: 
 
 
 # Moves point toward the strongest pull at the player's distance from it. The
-# move starts from where the room's limits let the view rest, not from point,
-# which can lie past a room edge. From there, a pull back into the room could
+# move starts from where the level's limits let the view rest, not from point,
+# which can lie past a level edge. From there, a pull back into the level could
 # end short of the edge and not move the view at all.
 func _pulled(point: Vector2) -> Vector2:
 	var toward := point
 	var amount := 0.0
-	# The parent's place in the world. A room's world sits in a SubViewport,
+	# The parent's place in the world. A level's world sits in a SubViewport,
 	# which isn't a Node2D and puts the camera at the world's origin.
 	var parent := get_parent() as Node2D
 	var frame := parent.global_transform if parent else Transform2D.IDENTITY

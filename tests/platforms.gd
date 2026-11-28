@@ -1,6 +1,6 @@
 extends "res://tests/lib/test.gd"
 
-# The linked platforms (game/platform_pair.gd) in their room: each sits level
+# The linked platforms (game/platform_pair.gd) in their level: each sits level
 # with the floor over a pit.
 #
 # Played: the small player walks onto the left platform and moves nothing.
@@ -12,21 +12,21 @@ extends "res://tests/lib/test.gd"
 # on the platform it sinks it, also pressed against the pit's wall.
 #
 # Staged, with the player moved by hand: the big player stepping off the sunk
-# platform, as the room has no way out of the pit at that size; the big player
+# platform, as the level has no way out of the pit at that size; the big player
 # on the right platform; and a pair with other travel and speeds.
 
 const STEP := 1.0 / 60.0
 
-var room: Node2D
+var level: Node2D
 var pair: Node2D
 var player: CharacterBody2D
 var floor_y := 0.0
 
 
 func run() -> void:
-	_load_room()
+	_load_level()
 	var travel: float = pair.travel
-	check(travel == 48.0, "the room's pair has the default travel of three tiles, 48 px: %.1f" % travel)
+	check(travel == 48.0, "the level's pair has the default travel of three tiles, 48 px: %.1f" % travel)
 	var left: Node2D = pair.left
 	var right: Node2D = pair.right
 
@@ -94,12 +94,12 @@ func run() -> void:
 		"staged: the big player sinks the right platform and the left rises: left %.1f, right %.1f" % [
 			left.global_position.y, right.global_position.y])
 	Events.hold_key(KEY_SHIFT, false)
-	room.free()
+	level.free()
 	await physics(2)
 
 	# Played: the big player walks onto the left platform from the floor and on
 	# into the pit's far wall. Half on the floor, it stands on the floor.
-	_load_room()
+	_load_level()
 	left = pair.left
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(60)
@@ -120,7 +120,7 @@ func run() -> void:
 	check(absf(player.position.x - (left.global_position.x + 24.0 - float(player.shape.size.x) / 2.0)) < 0.5,
 		"the player presses against the pit's far wall: x %.2f" % player.position.x)
 	Events.hold_key(KEY_SHIFT, false)
-	room.free()
+	level.free()
 	await physics(2)
 
 	await _check_exports()
@@ -129,15 +129,15 @@ func run() -> void:
 # The pair moves by its own travel and speeds: here a 32 px travel, sinking
 # at 30 px/s and returning at 90 px/s. Staged on the left platform.
 func _check_exports() -> void:
-	room = (load("res://game/rooms/platforms.tscn") as PackedScene).instantiate()
-	var placed: Node2D = room.get_node("PlatformPair")
+	level = (load("res://game/levels/platforms.tscn") as PackedScene).instantiate()
+	var placed: Node2D = level.get_node("PlatformPair")
 	placed.set("travel", 32.0)
 	placed.set("sink_speed", 30.0)
 	placed.set("return_speed", 90.0)
-	root.add_child(room)
-	pair = room.pair
-	player = room.player
-	floor_y = room.FLOOR_Y
+	root.add_child(level)
+	pair = level.pair
+	player = level.player
+	floor_y = level.FLOOR_Y
 	var left: Node2D = pair.left
 	var right: Node2D = pair.right
 	Events.hold_key(KEY_SHIFT, true)
@@ -157,16 +157,16 @@ func _check_exports() -> void:
 	var back := -await _steps(5)
 	check(absf(back - 90.0 * STEP) < 0.0001,
 		"staged: return_speed 90 lifts the platform %.4f px a step, 90 px/s" % back)
-	room.free()
+	level.free()
 	await physics(2)
 
 
-func _load_room() -> void:
-	room = (load("res://game/rooms/platforms.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	pair = room.pair
-	player = room.player
-	floor_y = room.FLOOR_Y
+func _load_level() -> void:
+	level = (load("res://game/levels/platforms.tscn") as PackedScene).instantiate()
+	root.add_child(level)
+	pair = level.pair
+	player = level.player
+	floor_y = level.FLOOR_Y
 
 
 # Runs count steps on platform, and reports whether the pair's offset moved one

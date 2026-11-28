@@ -1,6 +1,6 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://game/rooms/wide.gd" id="1_tuv08"]
+[ext_resource type="Script" path="res://game/levels/wide.gd" id="1_tuv08"]
 [ext_resource type="TileSet" path="res://art/tiles.tres" id="2_lmdqu"]
 
 [node name="Wide" type="Node2D" unique_id=1467159413]

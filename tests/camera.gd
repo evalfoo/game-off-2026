@@ -1,19 +1,19 @@
 extends "res://tests/lib/test.gd"
 
-# The camera in the wide room, at both sizes: it starts on the look-ahead
-# point in front of the player inside the room's limits, holds still while that
+# The camera in the wide level, at both sizes: it starts on the look-ahead
+# point in front of the player inside the level's limits, holds still while that
 # point moves inside its window, scrolls with the window's edge when it pushes
 # against it, keeps the point on the side the player walks toward until they
 # walk flip_distance back, keeps its height through a jump and moves it after
-# landing on the step, and stops at the room's edges. Every physics frame
-# checks the view stays inside the room.
+# landing on the step, and stops at the level's edges. Every physics frame
+# checks the view stays inside the level.
 
 const HALF_VIEW := Vector2(160, 90)
 
-var room: Node2D
+var level: Node2D
 var player: CharacterBody2D
 var camera: Camera2D
-# Frames whose view showed something outside the room.
+# Frames whose view showed something outside the level.
 var outside := 0
 # How far ahead of the player the view's centre settles walking right, by size.
 var leads := {}
@@ -26,10 +26,10 @@ func run() -> void:
 
 func _check_size(big: bool) -> void:
 	var label := "big" if big else "small"
-	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	player = room.player
-	camera = room.camera
+	level = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
+	root.add_child(level)
+	player = level.player
+	camera = level.camera
 	# The route's turns and walks are sized for a 32 px half window and its
 	# waits for smoothing at 5, so both sizes get those, whatever the game's
 	# tuning. tests/camera_sizes.gd checks the blend between sizes.
@@ -39,8 +39,8 @@ func _check_size(big: bool) -> void:
 	camera.big_smoothing_speed = 5.0
 	var feet_below: float = camera.feet_below_centre
 	var margin: float = camera.small_window_margin * HALF_VIEW.x
-	var floor_y: float = room.FLOOR_Y
-	var size: Vector2 = room.SIZE
+	var floor_y: float = level.FLOOR_Y
+	var size: Vector2 = level.SIZE
 	var small_ahead: float = camera.small_look_ahead
 	var ahead: float = camera.big_look_ahead if big else small_ahead
 	var flip: float = camera.flip_distance
@@ -109,7 +109,7 @@ func _check_size(big: bool) -> void:
 
 	# Walk into the step's side and jump onto it: the height holds in the air
 	# and moves to the step's after landing.
-	var step_y: float = (room.STEP_ROW as int) * 16.0
+	var step_y: float = (level.STEP_ROW as int) * 16.0
 	await _walk(KEY_RIGHT, func() -> bool: return player.is_on_wall(), true)
 	Events.hold_key(KEY_SPACE, true)
 	var climb := await _air_time()
@@ -129,12 +129,12 @@ func _check_size(big: bool) -> void:
 	check(absf(_centre().y - (step_y - feet_below)) < 0.5,
 		"%s: after landing on the step the view rises with it: %.1f -> %.1f" % [label, floor_view_y, _centre().y])
 
-	# Walk into the right wall: the view stops at the room's right edge.
+	# Walk into the right wall: the view stops at the level's right edge.
 	player.position = Vector2(size.x - 40.0, floor_y)
 	await _walk(KEY_RIGHT, func() -> bool: return player.is_on_wall())
 	await physics(180)
 	check(absf(_centre().x - (size.x - HALF_VIEW.x)) < 0.01,
-		"%s: at the right wall the view stops at the room's edge: %.1f" % [label, _centre().x])
+		"%s: at the right wall the view stops at the level's edge: %.1f" % [label, _centre().x])
 	# Turning back from the wall, the view leaves the edge and follows the
 	# look-ahead point left.
 	await _walk(KEY_LEFT, func() -> bool: return player.position.x <= size.x - 2.0 * HALF_VIEW.x)
@@ -154,12 +154,12 @@ func _check_size(big: bool) -> void:
 	check(short_side == -1.0 and camera.side == 1.0,
 		"%s: standing %.2f px back keeps the point left, %.2f px back flips it: side %d, then %d" % [label, flip - 0.01, flip, short_side, camera.side])
 
-	check(outside == 0, "%s: the view stays inside the room every frame: %d frames outside" % [label, outside])
+	check(outside == 0, "%s: the view stays inside the level every frame: %d frames outside" % [label, outside])
 	if big:
 		check(leads.big > 0.0 and leads.big < leads.small,
 			"the big player gets less look-ahead than the small one: %.1f px against %.1f px" % [leads.big, leads.small])
 	Events.hold_key(KEY_SHIFT, false)
-	room.free()
+	level.free()
 	await physics_frame
 	await physics_frame
 
@@ -222,7 +222,7 @@ func physics(count: int) -> void:
 	for i: int in count:
 		await physics_frame
 		var c := _centre()
-		var room_size: Vector2 = room.SIZE
-		if c.x < HALF_VIEW.x - 0.01 or c.x > room_size.x - HALF_VIEW.x + 0.01 \
-				or c.y < HALF_VIEW.y - 0.01 or c.y > room_size.y - HALF_VIEW.y + 0.01:
+		var level_size: Vector2 = level.SIZE
+		if c.x < HALF_VIEW.x - 0.01 or c.x > level_size.x - HALF_VIEW.x + 0.01 \
+				or c.y < HALF_VIEW.y - 0.01 or c.y > level_size.y - HALF_VIEW.y + 0.01:
 			outside += 1

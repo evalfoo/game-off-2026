@@ -1,7 +1,7 @@
 extends "res://tools/clips/scenario.gd"
 
-# A long fall in the wide room: the player stands on a ledge 112 px above the
-# floor, walks right off its end and falls to the floor. The wide room has no
+# A long fall in the wide level: the player stands on a ledge 112 px above the
+# floor, walks right off its end and falls to the floor. The wide level has no
 # ledge that high, so this adds one, the same on both refs. Pass -- --big to
 # hold Shift throughout, and -- --high for a ledge 640 px above the floor, with
 # the camera's top limit open so the view can show it. --window-bottom=<px>
@@ -23,7 +23,7 @@ func run() -> void:
 	var high := "--high" in OS.get_cmdline_user_args()
 	var row := HIGH_LEDGE_ROW if high else LEDGE_ROW
 	game.free()
-	game = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	game = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
 	root.add_child(game)
 	Tiles.platform(game.get_node("View/World/Tiles" if "view" in game else "Tiles"), row, LEDGE_FIRST, LEDGE_LAST)
 	game.player.position = Vector2((LEDGE_FIRST + 4) * Tiles.TILE, row * Tiles.TILE)
@@ -32,7 +32,7 @@ func run() -> void:
 	var bottom := _arg("--window-bottom=", "")
 	if bottom != "":
 		game.camera.set("window_bottom", bottom.to_float())
-	fixture("the wide room with a ledge added at y %d, %s player%s" % [row * Tiles.TILE, "big" if big else "small",
+	fixture("the wide level with a ledge added at y %d, %s player%s" % [row * Tiles.TILE, "big" if big else "small",
 		", window_bottom %s" % bottom if bottom != "" else ""])
 	if big:
 		Events.hold_key(KEY_SHIFT, true)

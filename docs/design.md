@@ -20,12 +20,18 @@ A sidescroller platformer with some puzzle elements that depend on the player si
     placeholders for the owner to tune.
   - The camera treats the platforms as normal floor.
   - The pair is a scene that the owner places in the editor.
-  - The seesaw room becomes a minimal grey-box platforms room, made in the
-    editor: the smallest room that shows the mechanic.
+  - The seesaw level becomes a minimal grey-box platforms level, made in the
+    editor: the smallest level that shows the mechanic.
 - Pushing things.
 - Fitting through things.
 - Timing: the player triggers something while large and uses speed to get
   somewhere before a door closes etc.
+
+## Levels
+
+- "i want to move away from the concept of rooms and just have levels"
+  - A level is one continuous space with no rooms or transitions inside it.
+  - "main is a level too"
 
 ## Look
 

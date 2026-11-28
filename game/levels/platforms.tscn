@@ -1,6 +1,6 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://game/rooms/platforms.gd" id="1_3s3n5"]
+[ext_resource type="Script" path="res://game/levels/platforms.gd" id="1_3s3n5"]
 [ext_resource type="TileSet" path="res://art/tiles.tres" id="2_2ubs4"]
 [ext_resource type="PackedScene" path="res://game/platform_pair.tscn" id="3_scimb"]
 

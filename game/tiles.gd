@@ -1,8 +1,8 @@
 extends RefCounted
 
-# Builds a room's tiles from res://art/tiles.tres: solid floor from the floor's
-# top edge to the room's bottom, and a wall in the column just outside each
-# side of it. A room is one 320x180 view unless it gives its own columns and
+# Builds a level's tiles from res://art/tiles.tres: solid floor from the floor's
+# top edge to the level's bottom, and a wall in the column just outside each
+# side of it. A level is one 320x180 view unless it gives its own columns and
 # rows.
 
 const TILE_SET := preload("res://art/tiles.tres")
@@ -19,7 +19,7 @@ const PLATFORM_RIGHT := Vector2i(2, 3)
 const ROWS := 12
 
 
-static func room(floor_y: float, columns: int = COLUMNS, rows: int = ROWS) -> TileMapLayer:
+static func level(floor_y: float, columns: int = COLUMNS, rows: int = ROWS) -> TileMapLayer:
 	var layer := TileMapLayer.new()
 	layer.name = "Tiles"
 	layer.tile_set = TILE_SET
