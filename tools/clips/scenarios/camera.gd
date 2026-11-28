@@ -1,18 +1,18 @@
 extends "res://tools/clips/scenario.gd"
 
-# The camera in the wide room: the player walks right, turns and walks back
+# The camera in the wide level: the player walks right, turns and walks back
 # inside the camera window, jumps in place, walks onto the step with a jump,
 # and jumps again as it lands. Pass -- --big to hold Shift throughout. The
-# room is new, so record one ref:
+# level is new, so record one ref:
 #
 #   tools/clips/record.sh tools/clips/scenarios/camera.gd HEAD [-- --big]
 
 func run() -> void:
 	var big := "--big" in OS.get_cmdline_user_args()
 	game.free()
-	game = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
+	game = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
 	root.add_child(game)
-	fixture("the wide room, %s player" % ("big" if big else "small"))
+	fixture("the wide level, %s player" % ("big" if big else "small"))
 	if big:
 		Events.hold_key(KEY_SHIFT, true)
 		await hold(0.6)

@@ -1,8 +1,9 @@
 extends Node2D
 
-# A grey-box: holding Shift makes the player bigger, heavier and slower. Two
-# boxes of different mass show the weight. Tests, clips and shots launch this
-# scene through tests/lib/fixture.gd.
+# The main level, a grey-box: holding Shift makes the player bigger, heavier
+# and slower. Two boxes of different mass show the weight. Tests, clips and
+# shots launch this scene through tests/lib/fixture.gd, which is why it stays
+# at game/main.tscn rather than under game/levels/.
 
 const Player := preload("res://game/player.gd")
 const Tiles := preload("res://game/tiles.gd")
@@ -32,7 +33,7 @@ var readout := Label.new()
 func _ready() -> void:
 	view.name = "View"
 	add_child(view)
-	view.world.add_child(Tiles.room(FLOOR_Y))
+	view.world.add_child(Tiles.level(FLOOR_Y))
 
 	_add_box("BoxA", "BOX A", Vector2(168, FLOOR_Y - 8), preload("res://art/box_a.png"), 2.0)
 	_add_box("BoxB", "BOX B", Vector2(240, FLOOR_Y - 16), preload("res://art/box_b.png"), 8.0)

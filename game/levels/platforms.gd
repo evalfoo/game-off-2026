@@ -1,14 +1,14 @@
 extends Node2D
 
-# A grey-box room for the linked platforms (game/platform_pair.tscn): each sits
+# A grey-box level for the linked platforms (game/platform_pair.tscn): each sits
 # level with the floor over a pit, so the player walks onto it at either size.
 # The big player sinks one into its pit while the other rises out of its own.
-# Open it with res://game/rooms/platforms.tscn; the game still starts in
-# game/main.tscn.
+# Open it with res://game/levels/platforms.tscn; the game still starts in
+# the main level, game/main.tscn.
 #
-# Made in the editor, as the wide room: the tiles on Tiles, the pair and the
+# Made in the editor, as the wide level: the tiles on Tiles, the pair and the
 # player's start, PlayerStart. The pixel view makes its world in code, so they
-# sit under the room's root, where the editor shows them, and this script
+# sit under the level's root, where the editor shows them, and this script
 # moves them into the world at startup.
 
 const Player := preload("res://game/player.gd")

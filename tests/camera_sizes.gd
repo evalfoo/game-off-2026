@@ -5,25 +5,25 @@ extends "res://tests/lib/test.gd"
 # sets its own small and big values, all different, so the game's tuning can't
 # hide a blend. Big, the view settles the big look-ahead less the big window's
 # half width ahead of a player who walked right. After growing and shrinking
-# back, walking eases as it does in a fresh room: Camera2D's own physics update,
+# back, walking eases as it does in a fresh level: Camera2D's own physics update,
 # which setting the smoothing speed turns back on, stays off.
-# A room with no window checks the look-ahead point the physics step applies:
+# A level with no window checks the look-ahead point the physics step applies:
 # there the camera's position is that point.
 
 const HALF_VIEW_X := 160.0
 
-var room: Node2D
+var level: Node2D
 var player: CharacterBody2D
 var camera: Camera2D
 
 
 func run() -> void:
 	# A fresh small walk, to compare with one after growing and shrinking.
-	await _open_room()
+	await _open_level()
 	var fresh_lag := await _walk_lag()
-	_close_room()
+	_close_level()
 
-	await _open_room()
+	await _open_level()
 	_check_blend("small")
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(12)
@@ -45,10 +45,10 @@ func run() -> void:
 	check(absf(lead - expected) < 0.5,
 		"big: after walking right the view settles %.1f px ahead of the player, expected %.1f" % [lead, expected])
 	Events.hold_key(KEY_SHIFT, false)
-	_close_room()
+	_close_level()
 
-	# Grow and shrink back, then walk as in the fresh room.
-	await _open_room()
+	# Grow and shrink back, then walk as in the fresh level.
+	await _open_level()
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(40)
 	Events.hold_key(KEY_SHIFT, false)
@@ -56,12 +56,12 @@ func run() -> void:
 	_check_blend("shrunk back")
 	var lag := await _walk_lag()
 	check(absf(lag - fresh_lag) < 0.5,
-		"shrunk back: walking right, the view trails the window's edge by %.1f px, as in a fresh room: %.1f px" % [lag, fresh_lag])
-	_close_room()
+		"shrunk back: walking right, the view trails the window's edge by %.1f px, as in a fresh level: %.1f px" % [lag, fresh_lag])
+	_close_level()
 
 	# With no window, the camera's position is the look-ahead point the physics
 	# step applied, so its blend shows small, partway and big.
-	await _open_room()
+	await _open_level()
 	camera.small_window_margin = 0.0
 	camera.big_window_margin = 0.0
 	await physics(1)
@@ -75,14 +75,14 @@ func run() -> void:
 	await physics(30)
 	_check_ahead("big")
 	Events.hold_key(KEY_SHIFT, false)
-	_close_room()
+	_close_level()
 
 
-func _open_room() -> void:
-	room = (load("res://game/rooms/wide.tscn") as PackedScene).instantiate()
-	root.add_child(room)
-	player = room.player
-	camera = room.camera
+func _open_level() -> void:
+	level = (load("res://game/levels/wide.tscn") as PackedScene).instantiate()
+	root.add_child(level)
+	player = level.player
+	camera = level.camera
 	camera.small_window_margin = 0.2
 	camera.big_window_margin = 0.1
 	camera.small_smoothing_speed = 5.0
@@ -92,8 +92,8 @@ func _open_room() -> void:
 	await physics(1)
 
 
-func _close_room() -> void:
-	room.free()
+func _close_level() -> void:
+	level.free()
 
 
 # Walks right for 2 seconds and returns how far the view's centre trails the
