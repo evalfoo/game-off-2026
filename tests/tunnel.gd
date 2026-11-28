@@ -10,8 +10,10 @@ extends "res://tests/lib/test.gd"
 # enough for big to fit. Beside the level's left wall, Shift keeps it small and
 # it doesn't slide away from the wall to make room.
 #
-# Staged, with a ceiling painted over the start: big fits under a 3-tile
-# ceiling, and a 2-tile ceiling keeps the player small.
+# Staged: the player placed a hair closer to the left wall than big needs stays
+# small and in place, and placed exactly far enough grows in place. With a
+# ceiling painted over the start, big fits under a 3-tile ceiling, and a 2-tile
+# ceiling keeps the player small.
 
 const Tiles := preload("res://game/tiles.gd")
 
@@ -121,6 +123,23 @@ func run() -> void:
 		"holding Shift beside the wall keeps the player small and in place: t %.2f, x %.2f -> %.2f" % [
 			player.t, x, player.position.x])
 	Events.hold_key(KEY_SHIFT, false)
+	await physics(30)
+
+	# Staged: a hair closer to the wall than big needs, it stays small and in
+	# place; exactly far enough, it grows in place.
+	for staged_x: float in [half_big - 0.06, half_big]:
+		player.position.x = staged_x
+		player.velocity = Vector2.ZERO
+		await physics(5)
+		Events.hold_key(KEY_SHIFT, true)
+		await physics(60)
+		var grows := staged_x >= half_big
+		check(player.t == (1.0 if grows else 0.0) and absf(player.position.x - staged_x) < 0.001,
+			"staged: Shift at x %.2f, big needs %.0f, %s: t %.2f, x %.5f" % [
+				staged_x, half_big, "it grows in place" if grows else "it stays small and in place",
+				player.t, player.position.x])
+		Events.hold_key(KEY_SHIFT, false)
+		await physics(30)
 	level.free()
 	await physics(2)
 

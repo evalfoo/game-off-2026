@@ -41,6 +41,8 @@ extends CharacterBody2D
 # the player fits through an opening of its own height, such as the small
 # player through a 1-tile tunnel.
 const HEADROOM := 0.25
+# How far a tile may reach into the big box and still let it grow, in px.
+const FIT_TOLERANCE := 0.0001
 
 var t := 0.0
 # The drawn size. The collision box is HEADROOM shorter.
@@ -116,11 +118,13 @@ func _apply_size() -> void:
 
 
 # Whether the big player's collision box would fit where the player stands,
-# without moving it. Only tiles count. It ignores what lies within the body's
-# safe margin, such as the floor it stands on and a wall it touches.
+# without moving it. Only tiles count. The box is FIT_TOLERANCE smaller on each
+# side, so the floor it stands on and a wall it touches don't count, but a wall
+# a hair inside it does: the body's safe margin would let it grow and be pushed
+# out sideways.
 func _big_fits() -> bool:
 	var box := RectangleShape2D.new()
-	box.size = big_size - Vector2(0, HEADROOM) - Vector2.ONE * 2.0 * safe_margin
+	box.size = big_size - Vector2(0, HEADROOM) - Vector2.ONE * 2.0 * FIT_TOLERANCE
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = box
 	query.transform = global_transform.translated(Vector2(0, -(big_size.y - HEADROOM) / 2))
