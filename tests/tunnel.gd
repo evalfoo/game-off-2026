@@ -3,7 +3,8 @@ extends "res://tests/lib/test.gd"
 # The tunnel level (game/levels/tunnel.tscn): a wall with a 1-tile-tall tunnel
 # at floor level. The player grows only where big fits, where it stands.
 #
-# Played: the big player can't enter the tunnel. The small one walks through
+# Played: the big player can't enter the tunnel, and touching the wall it still
+# fits where it stands. The small one walks through
 # at full speed. Holding Shift in the tunnel, under its low ceiling, keeps it
 # small and in place, and with Shift still held it grows once it walks out far
 # enough for big to fit. Beside the level's left wall, Shift keeps it small and
@@ -35,8 +36,20 @@ func run() -> void:
 	check(player.t == 1.0 and player.position.x < wall_left - half_big + 0.5,
 		"the big player is blocked by the wall: x %.2f, wall at %.0f" % [player.position.x, wall_left])
 
-	# Small walks in at full speed, from a run-up.
+	# Touching the wall, big still fits: a short let-go and Shift again grow it back.
 	Events.hold_key(KEY_RIGHT, false)
+	await physics(10)
+	var x := player.position.x
+	Events.hold_key(KEY_SHIFT, false)
+	await physics(5)
+	var shrunk: float = player.t
+	Events.hold_key(KEY_SHIFT, true)
+	await physics(30)
+	check(shrunk < 1.0 and player.t == 1.0 and absf(player.position.x - x) < 0.01,
+		"touching the wall, the player grows back to big where it stands: t %.2f -> %.2f, x %.2f -> %.2f" % [
+			shrunk, player.t, x, player.position.x])
+
+	# Small walks in at full speed, from a run-up.
 	Events.hold_key(KEY_SHIFT, false)
 	await physics(30)
 	Events.hold_key(KEY_LEFT, true)
@@ -60,7 +73,7 @@ func run() -> void:
 		"in the tunnel the small player stands on the floor: y %.2f" % player.position.y)
 
 	# Shift under the tunnel's ceiling keeps it small and in place.
-	var x := player.position.x
+	x = player.position.x
 	Events.hold_key(KEY_SHIFT, true)
 	await physics(60)
 	check(player.t == 0.0 and player.size == player.small_size and player.position.x == x,
