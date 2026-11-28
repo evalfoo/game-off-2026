@@ -30,7 +30,7 @@ A sidescroller platformer with some puzzle elements that depend on the player si
 ## Levels
 
 - "i want to move away from the concept of rooms and just have levels"
-  - A level is one continuous space, with no rooms or transitions inside it.
+  - A level is one continuous space with no rooms or transitions inside it.
   - "main is a level too"
 
 ## Look
