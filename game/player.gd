@@ -7,6 +7,9 @@ extends CharacterBody2D
 # Custom physics: the code moves the player, and its weight is code too. It
 # pushes the boxes it walks into (game/box.gd) and, once fully big, sinks the
 # linked platform it stands on (game/linked_platform.gd).
+#
+# It grows only where big fits, so holding Shift in a tunnel keeps it small
+# until it walks out.
 
 @export var small_size := Vector2(10, 16)
 @export var big_size := Vector2(30, 48)
@@ -34,7 +37,14 @@ extends CharacterBody2D
 # (mass 2), big moves BOX B (mass 8).
 @export var push_ratio := 3.0
 
+# The collision box is this much shorter than the drawn size, at the top, so
+# the player fits through an opening of its own height, such as the small
+# player through a 1-tile tunnel.
+const HEADROOM := 0.25
+
 var t := 0.0
+# The drawn size. The collision box is HEADROOM shorter.
+var size := small_size
 var mass := small_mass
 var speed := small_speed
 var jump_speed := small_jump_speed
@@ -64,7 +74,9 @@ func _physics_process(delta: float) -> void:
 	# The play driver's pause runs zero-length frames.
 	if delta <= 0.0:
 		return
-	var target := 1.0 if Input.is_key_pressed(KEY_SHIFT) else 0.0
+	var target := 0.0
+	if Input.is_key_pressed(KEY_SHIFT) and (t == 1.0 or _big_fits()):
+		target = 1.0
 	t = move_toward(t, target, delta / transition_time)
 	_apply_size()
 
@@ -93,14 +105,31 @@ func _physics_process(delta: float) -> void:
 
 
 func _apply_size() -> void:
-	var size := small_size.lerp(big_size, t)
-	shape.size = size
-	collision.position = Vector2(0, -size.y / 2)
+	size = small_size.lerp(big_size, t)
+	shape.size = size - Vector2(0, HEADROOM)
+	collision.position = Vector2(0, -shape.size.y / 2)
 	sprite.scale = size / sprite.texture.get_size()
 	sprite.position = Vector2(-size.x / 2, -size.y)
 	mass = lerpf(small_mass, big_mass, t)
 	speed = lerpf(small_speed, big_speed, t)
 	jump_speed = lerpf(small_jump_speed, big_jump_speed, t)
+
+
+# Whether the big player's collision box would fit where the player stands,
+# without moving it. Only tiles count. It ignores what lies within the body's
+# safe margin, such as the floor it stands on and a wall it touches.
+func _big_fits() -> bool:
+	var box := RectangleShape2D.new()
+	box.size = big_size - Vector2(0, HEADROOM) - Vector2.ONE * 2.0 * safe_margin
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = box
+	query.transform = global_transform.translated(Vector2(0, -(big_size.y - HEADROOM) / 2))
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	for hit: Dictionary in get_world_2d().direct_space_state.intersect_shape(query):
+		if hit.collider is TileMapLayer:
+			return false
+	return true
 
 
 # Moves the box in the way first, if the player is heavy enough, so the

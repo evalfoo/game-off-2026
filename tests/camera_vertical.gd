@@ -66,7 +66,7 @@ func _check_fall(big: bool, ledge_row: int, bottom_edge := 80.0) -> void:
 	for i: int in 600:
 		await physics(1)
 		var feet := player.position.y - _centre().y
-		var height: float = player.shape.size.y
+		var height: float = player.size.y
 		var head := feet - height
 		lowest = maxf(lowest, feet)
 		if feet > HALF_VIEW.y or head < -HALF_VIEW.y:
